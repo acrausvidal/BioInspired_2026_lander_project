@@ -1,0 +1,5 @@
+gymnasium[box2d]
+stable-baselines3
+tensorboard
+torch
+pygame-ce
