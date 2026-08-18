@@ -14,7 +14,7 @@ from src.custom_lander import CustomLunarLanderContinuous
 
 def evaluate_policy(
     model_path: str = "models/best_model",
-    num_episodes: int = 20,
+    num_episodes: int = 10,
     render: bool = False,
     seed: int = 42,
 ):
@@ -91,7 +91,7 @@ def evaluate_policy(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate Trained Lunar Lander Agent")
     parser.add_argument("--model", type=str, default="models/best_model", help="Path to trained model")
-    parser.add_argument("--episodes", type=int, default=20, help="Number of test episodes")
+    parser.add_argument("--episodes", type=int, default=10, help="Number of test episodes")
     parser.add_argument("--render", action="store_true", help="Render simulation to display")
     parser.add_argument("--seed", type=int, default=42, help="Evaluation seed")
     args = parser.parse_args()

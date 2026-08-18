@@ -41,29 +41,43 @@ AERO_COLORS = {
 }
 
 
-def plot_nominal_learning_curve(csv_path: str = "results/nominal_learning_curve.csv", output_dir: str = "results"):
+def plot_nominal_learning_curve_episodes(
+    csv_path: str = "results/nominal_learning_curve.csv",
+    output_dir: str = "results",
+):
     """
-    Plot the nominal agent learning curve proving the learning effect and convergence.
+    Plot nominal learning curve with Episodes on the x-axis.
     """
     if not os.path.exists(csv_path):
-        print(f"File not found: {csv_path}. Run src/train.py first.")
+        print(f"File not found: {csv_path}")
         return
 
     df = pd.read_csv(csv_path)
     os.makedirs(output_dir, exist_ok=True)
 
+    # Estimate episode numbers if not explicitly present (avg episode length ~300 steps)
+    if "episodes_approx" in df and df["episodes_approx"].max() > 0:
+        x_vals = df["episodes_approx"]
+        x_label = "Training Episodes"
+    else:
+        # Approximate cumulative episodes from timestep and mean episode length
+        mean_lens = df["mean_episode_length"].replace(0, 200).fillna(200)
+        # Approximate incremental episodes per 10k step block
+        approx_eps = np.cumsum(10000.0 / mean_lens)
+        x_vals = approx_eps
+        x_label = "Training Episodes (Estimated Cumulative)"
+
     fig = plt.figure(figsize=(12, 8))
     gs = GridSpec(2, 2, height_ratios=[1.2, 1.0], hspace=0.3, wspace=0.25)
 
-    # 1. Main Learning Curve: Timestep vs Mean Reward
+    # 1. Episode vs Mean Reward
     ax1 = fig.add_subplot(gs[0, :])
-    timesteps = df["timestep"]
     mean_reward = df["mean_reward"]
     std_reward = df["std_reward"]
 
-    ax1.plot(timesteps, mean_reward, color=AERO_COLORS["primary"], label="PPO Mean Reward", lw=2.5)
+    ax1.plot(x_vals, mean_reward, color=AERO_COLORS["primary"], label="PPO Mean Return", lw=2.5)
     ax1.fill_between(
-        timesteps,
+        x_vals,
         mean_reward - std_reward,
         mean_reward + std_reward,
         color=AERO_COLORS["secondary"],
@@ -73,247 +87,100 @@ def plot_nominal_learning_curve(csv_path: str = "results/nominal_learning_curve.
     ax1.axhline(y=200, color=AERO_COLORS["danger"], linestyle=":", lw=1.8, label=r"Solved Threshold (Score $\geq 200$)")
     ax1.axhline(y=0, color="gray", linestyle="-", alpha=0.5, lw=1.0)
     
-    ax1.set_title("Nominal Training Convergence: Proximal Policy Optimization on Mass-Varying Lunar Lander", fontweight="bold")
-    ax1.set_xlabel("Environment Timesteps")
+    ax1.set_title("Nominal PPO Learning Curve: Episode Count vs. Return", fontweight="bold")
+    ax1.set_xlabel(x_label)
     ax1.set_ylabel("Mean Evaluation Return")
     ax1.grid(True)
     ax1.legend(loc="lower right", framealpha=0.9)
-    ax1.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, p: f"{int(x/1000)}k"))
 
-    # 2. Success Rate (%) over training
+    # 2. Episode vs Success Rate (%)
     ax2 = fig.add_subplot(gs[1, 0])
     success_pct = df["success_rate"] * 100
-    ax2.plot(timesteps, success_pct, color=AERO_COLORS["accent2"], lw=2.2, marker="o", markersize=4)
-    ax2.set_title("Safe Landing Success Rate (%)", fontweight="bold")
-    ax2.set_xlabel("Environment Timesteps")
+    ax2.plot(x_vals, success_pct, color=AERO_COLORS["accent2"], lw=2.2, marker="o", markersize=4)
+    ax2.set_title("Landing Success Rate (%)", fontweight="bold")
+    ax2.set_xlabel(x_label)
     ax2.set_ylabel("Success Rate (%)")
     ax2.set_ylim(-5, 105)
     ax2.grid(True)
-    ax2.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, p: f"{int(x/1000)}k"))
 
-    # 3. Mean Fuel Remaining & Consumption
+    # 3. Episode vs Mean Fuel Conserved
     ax3 = fig.add_subplot(gs[1, 1])
     fuel_rem = df["mean_fuel_remaining"]
-    ax3.plot(timesteps, fuel_rem, color=AERO_COLORS["accent3"], lw=2.2, marker="s", markersize=4, label="Fuel Remaining")
-    ax3.set_title("Mean Propellant Conserved at Touchdown", fontweight="bold")
-    ax3.set_xlabel("Environment Timesteps")
+    ax3.plot(x_vals, fuel_rem, color=AERO_COLORS["accent3"], lw=2.2, marker="s", markersize=4)
+    ax3.set_title("Propellant Conserved at Touchdown", fontweight="bold")
+    ax3.set_xlabel(x_label)
     ax3.set_ylabel("Remaining Fuel (kg)")
     ax3.set_ylim(0, 105)
     ax3.grid(True)
-    ax3.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, p: f"{int(x/1000)}k"))
 
-    out_path = os.path.join(output_dir, "nominal_learning_curve.png")
+    out_path = os.path.join(output_dir, "nominal_learning_curve_episodes.png")
     plt.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close()
-    print(f"Saved nominal learning curve plot to: {out_path}")
+    print(f"Saved nominal learning curve (Episodes) to: {out_path}")
 
 
-def plot_sensitivity_analysis(csv_path: str = "results/sensitivity_analysis.csv", output_dir: str = "results"):
+def plot_convergence_bar_chart(summary_csv: str = "results/convergence_summary_table.csv", output_dir: str = "results"):
     """
-    Plot hyperparameter sensitivity comparison across learning rate, discount factor, and entropy coefficient.
+    Plot Time-to-Convergence bar chart comparing sample efficiency (Steps & Episodes) across hyperparameters.
     """
-    if not os.path.exists(csv_path):
-        print(f"File not found: {csv_path}. Run src/sensitivity_analysis.py first.")
+    if not os.path.exists(summary_csv):
+        print(f"Summary CSV not found: {summary_csv}")
         return
 
-    df = pd.read_csv(csv_path)
+    df = pd.read_csv(summary_csv)
     os.makedirs(output_dir, exist_ok=True)
 
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5.5))
+
     categories = df["category"].unique()
+    labels = [f"{row['parameter']}={row['value']}" for _, row in df.iterrows()]
+    steps = df["steps_to_converge"] / 1000.0  # in thousands
 
-    # Create 3-panel comparison dashboard
-    fig, axes = plt.subplots(1, 3, figsize=(18, 5.5), sharey=True)
-
-    titles = {
-        "Learning Rate": r"Learning Rate $\alpha$ Sensitivity",
-        "Discount Factor": r"Discount Factor $\gamma$ (Planning Horizon)",
-        "Exploration-Exploitation (Entropy)": r"Exploration / Entropy Coeff $c_{\text{ent}}$",
-    }
-
-    colors_list = [AERO_COLORS["primary"], AERO_COLORS["accent1"], AERO_COLORS["danger"], AERO_COLORS["secondary"]]
-
-    for ax_idx, cat in enumerate(["Learning Rate", "Discount Factor", "Exploration-Exploitation (Entropy)"]):
-        ax = axes[ax_idx]
-        cat_df = df[df["category"] == cat]
-        param_values = cat_df["value"].unique()
-
-        for idx, val in enumerate(param_values):
-            sub = cat_df[cat_df["value"] == val].sort_values("timestep")
-            color = colors_list[idx % len(colors_list)]
-            label_name = f"{sub['parameter'].iloc[0]} = {val}"
-            ax.plot(sub["timestep"], sub["mean_reward"], color=color, label=label_name, lw=2.2)
-            ax.fill_between(
-                sub["timestep"],
-                sub["mean_reward"] - 0.5 * sub["std_reward"],
-                sub["mean_reward"] + 0.5 * sub["std_reward"],
-                color=color,
-                alpha=0.15,
-            )
-
-        ax.axhline(y=200, color="gray", linestyle=":", lw=1.5, label="Solved (200 pts)")
-        ax.axhline(y=0, color="black", linestyle="-", lw=0.8, alpha=0.4)
-        ax.set_title(titles.get(cat, cat), fontweight="bold")
-        ax.set_xlabel("Environment Timesteps")
-        if ax_idx == 0:
-            ax.set_ylabel("Mean Evaluation Reward")
-        ax.grid(True)
-        ax.legend(loc="lower right", framealpha=0.9)
-        ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, p: f"{int(x/1000)}k"))
-
-    plt.suptitle("Hyperparameter Sensitivity Analysis: Policy Convergence and Sample Efficiency", fontsize=15, fontweight="bold", y=1.02)
-    plt.tight_layout()
-
-    out_path = os.path.join(output_dir, "sensitivity_comparison_dashboard.png")
-    plt.savefig(out_path, dpi=300, bbox_inches="tight")
-    plt.close()
-    print(f"Saved sensitivity comparison dashboard to: {out_path}")
-
-    # Generate individual dedicated plots for each parameter
-    for cat in categories:
-        cat_df = df[df["category"] == cat]
-        param_name = cat_df["parameter"].iloc[0]
-        fig, ax = plt.subplots(figsize=(8, 5.5))
-        for idx, val in enumerate(cat_df["value"].unique()):
-            sub = cat_df[cat_df["value"] == val].sort_values("timestep")
-            color = colors_list[idx % len(colors_list)]
-            ax.plot(sub["timestep"], sub["mean_reward"], color=color, label=f"{param_name} = {val}", lw=2.4)
-            ax.fill_between(
-                sub["timestep"],
-                sub["mean_reward"] - sub["std_reward"],
-                sub["mean_reward"] + sub["std_reward"],
-                color=color,
-                alpha=0.18,
-            )
-        ax.axhline(y=200, color=AERO_COLORS["danger"], linestyle=":", lw=1.8, label="Solved Benchmark")
-        ax.set_title(f"Sensitivity Study: {titles.get(cat, cat)}", fontweight="bold")
-        ax.set_xlabel("Environment Timesteps")
-        ax.set_ylabel("Mean Evaluation Return")
-        ax.grid(True)
-        ax.legend(loc="lower right", framealpha=0.9)
-        ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, p: f"{int(x/1000)}k"))
-
-        safe_param_name = param_name.replace("/", "_")
-        single_path = os.path.join(output_dir, f"sensitivity_{safe_param_name}.png")
-        plt.savefig(single_path, dpi=300, bbox_inches="tight")
-        plt.close()
-        print(f"Saved individual sensitivity plot to: {single_path}")
-
-
-def plot_trajectory_profile(model_path: str = "models/best_model.zip", output_dir: str = "results"):
-    """
-    Run an optimal deterministic landing trajectory with the trained PPO agent
-    and plot physical states, continuous controls, mass reduction, and fuel depletion vs time.
-    """
-    from stable_baselines3 import PPO
-    from src.custom_lander import CustomLunarLanderContinuous
-
-    if not os.path.exists(model_path):
-        if os.path.exists(model_path.replace(".zip", "")):
-            model_path = model_path.replace(".zip", "")
+    colors = []
+    for cat in df["category"]:
+        if "Learning" in cat:
+            colors.append(AERO_COLORS["primary"])
+        elif "Discount" in cat:
+            colors.append(AERO_COLORS["accent1"])
         else:
-            print(f"Model checkpoint not found: {model_path}")
-            return
+            colors.append(AERO_COLORS["secondary"])
 
-    env = CustomLunarLanderContinuous()
-    model = PPO.load(model_path)
+    # Panel 1: Timesteps to Convergence
+    bars1 = axes[0].barh(labels, steps, color=colors, edgecolor="black", height=0.6)
+    axes[0].set_xlabel("Environment Steps to Converge (Thousands)")
+    axes[0].set_title("Sample Efficiency: Timesteps to Convergence", fontweight="bold")
+    axes[0].grid(True, axis="x")
 
-    obs, info = env.reset(seed=42)
-    done = False
+    for bar in bars1:
+        w = bar.get_width()
+        axes[0].text(w + 2, bar.get_y() + bar.get_height()/2, f"{w:.0f}k steps", va="center", fontsize=9)
 
-    time_steps = []
-    positions_x = []
-    positions_y = []
-    velocities_x = []
-    velocities_y = []
-    angles = []
-    main_throttles = []
-    side_throttles = []
-    fuels = []
-    masses = []
+    # Panel 2: Final Return Achieved
+    rewards = df["final_mean_reward"]
+    bars2 = axes[1].barh(labels, rewards, color=colors, edgecolor="black", height=0.6)
+    axes[1].axvline(x=200, color=AERO_COLORS["danger"], linestyle=":", lw=1.8, label=r"Solved ($Score \geq 200$)")
+    axes[1].set_xlabel("Mean Return at Stopping")
+    axes[1].set_title("Convergence Quality: Final Return", fontweight="bold")
+    axes[1].grid(True, axis="x")
+    axes[1].legend(loc="lower right")
 
-    step = 0
-    dt = 1.0 / 50.0  # 50 FPS
+    for bar in bars2:
+        w = bar.get_width()
+        axes[1].text(w + 3, bar.get_y() + bar.get_height()/2, f"{w:.1f}", va="center", fontsize=9)
 
-    while not done:
-        action, _ = model.predict(obs, deterministic=True)
-        obs, reward, terminated, truncated, info = env.step(action)
-        
-        t = step * dt
-        time_steps.append(t)
-        positions_x.append(obs[0])
-        positions_y.append(obs[1])
-        velocities_x.append(obs[2])
-        velocities_y.append(obs[3])
-        angles.append(np.degrees(obs[4]))
-        main_throttles.append(max(0.0, action[0]))
-        side_throttles.append(action[1])
-        fuels.append(info.get("fuel_remaining", 0.0))
-        masses.append(info.get("lander_mass", 0.0))
-
-        step += 1
-        done = terminated or truncated
-
-    env.close()
-
-    time_steps = np.array(time_steps)
-    fig, axes = plt.subplots(3, 2, figsize=(14, 10), sharex=True)
-
-    # Subplot 1: Altitude and Horizontal Position
-    axes[0, 0].plot(time_steps, positions_y, color=AERO_COLORS["primary"], lw=2.2, label="Altitude $y$")
-    axes[0, 0].plot(time_steps, positions_x, color=AERO_COLORS["accent1"], lw=2.0, linestyle="--", label="Horizontal $x$")
-    axes[0, 0].set_ylabel("Position (Norm)")
-    axes[0, 0].set_title("Lander Flight Trajectory", fontweight="bold")
-    axes[0, 0].grid(True)
-    axes[0, 0].legend()
-
-    # Subplot 2: Velocities
-    axes[0, 1].plot(time_steps, velocities_y, color=AERO_COLORS["danger"], lw=2.2, label="Vertical $v_y$")
-    axes[0, 1].plot(time_steps, velocities_x, color=AERO_COLORS["secondary"], lw=2.0, linestyle="--", label="Lateral $v_x$")
-    axes[0, 1].set_ylabel("Velocity (Norm)")
-    axes[0, 1].set_title("Translational Velocity Profiles", fontweight="bold")
-    axes[0, 1].grid(True)
-    axes[0, 1].legend()
-
-    # Subplot 3: Orientation Angle
-    axes[1, 0].plot(time_steps, angles, color=AERO_COLORS["accent2"], lw=2.2)
-    axes[1, 0].axhline(y=0, color="gray", linestyle=":", alpha=0.7)
-    axes[1, 0].set_ylabel("Pitch Angle (deg)")
-    axes[1, 0].set_title("Vehicle Orientation Angle $\\theta$", fontweight="bold")
-    axes[1, 0].grid(True)
-
-    # Subplot 4: Continuous Throttle Commands
-    axes[1, 1].plot(time_steps, main_throttles, color=AERO_COLORS["primary"], lw=2.0, label="Main Throttle $u_{\\text{main}}$")
-    axes[1, 1].plot(time_steps, side_throttles, color=AERO_COLORS["accent3"], lw=1.8, linestyle="--", label="Side Throttle $u_{\\text{side}}$")
-    axes[1, 1].set_ylabel("Command Action")
-    axes[1, 1].set_title("Continuous Engine Actuation", fontweight="bold")
-    axes[1, 1].grid(True)
-    axes[1, 1].legend()
-
-    # Subplot 5: Propellant Depletion
-    axes[2, 0].plot(time_steps, fuels, color=AERO_COLORS["accent3"], lw=2.5)
-    axes[2, 0].set_xlabel("Mission Time (s)")
-    axes[2, 0].set_ylabel("Fuel Remaining (kg)")
-    axes[2, 0].set_title("Propellant Mass Depletion", fontweight="bold")
-    axes[2, 0].grid(True)
-
-    # Subplot 6: Vehicle Dynamic Mass
-    axes[2, 1].plot(time_steps, masses, color=AERO_COLORS["secondary"], lw=2.5)
-    axes[2, 1].set_xlabel("Mission Time (s)")
-    axes[2, 1].set_ylabel("Vehicle Mass (kg)")
-    axes[2, 1].set_title("Dynamic Mass-Varying System $m(t)$", fontweight="bold")
-    axes[2, 1].grid(True)
-
+    plt.suptitle(r"Hyperparameter Convergence Comparison: Time-to-Threshold (Return $\geq 190$)", fontsize=14, fontweight="bold", y=1.02)
     plt.tight_layout()
-    out_path = os.path.join(output_dir, "trajectory_analysis.png")
+
+    out_path = os.path.join(output_dir, "convergence_comparison_barplot.png")
     plt.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close()
-    print(f"Saved state trajectory profile to: {out_path}")
+    print(f"Saved convergence comparison bar plot to: {out_path}")
 
 
 def main():
-    plot_nominal_learning_curve()
-    plot_sensitivity_analysis()
-    plot_trajectory_profile()
+    plot_nominal_learning_curve_episodes()
+    if os.path.exists("results/convergence_summary_table.csv"):
+        plot_convergence_bar_chart()
 
 
 if __name__ == "__main__":
