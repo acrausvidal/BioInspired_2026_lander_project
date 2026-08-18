@@ -404,12 +404,12 @@ def plot_convergence_bar_chart(summary_csv: str = "results/convergence_summary_t
     # -------------------------------------------------------------
     # Panel 1: Steps to Convergence (Sample Efficiency)
     # -------------------------------------------------------------
-    bars1 = axes[0].barh(y_pos, steps_k, color=colors, edgecolor="#001219", lw=0.9, height=0.6, alpha=0.9)
+    bars1 = axes[0].barh(y_pos, steps_k, color=colors, edgecolor="none", height=0.6, alpha=0.9)
     axes[0].set_yticks(y_pos)
     axes[0].set_yticklabels(labels, fontsize=11)
     axes[0].set_xlabel(r"Environment Steps to Converge ($10^3$)", fontsize=11)
     axes[0].set_title(r"\textbf{Sample Efficiency: Steps to Convergence}", fontsize=12, pad=10)
-    axes[0].set_xlim(0, 225)
+    axes[0].set_xlim(0, 235)
     axes[0].grid(True, axis="x", linestyle="--", alpha=0.4)
 
     for bar in bars1:
@@ -424,20 +424,28 @@ def plot_convergence_bar_chart(summary_csv: str = "results/convergence_summary_t
             fontweight="medium",
         )
 
+    # Add Category Legend placed in upper right empty area
+    legend_elements = [
+        plt.Rectangle((0, 0), 1, 1, facecolor=category_colors["Learning Rate"], edgecolor="none", label=r"Learning Rate $\alpha$"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=category_colors["Discount Factor"], edgecolor="none", label=r"Discount Factor $\gamma$"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=category_colors["Exploration-Exploitation (Entropy)"], edgecolor="none", label=r"Entropy $c_{\text{ent}}$"),
+    ]
+    axes[0].legend(handles=legend_elements, loc="upper right", framealpha=0.92, fontsize=9.0)
+
     # -------------------------------------------------------------
     # Panel 2: Final Return Achieved at Stopping
     # -------------------------------------------------------------
-    bars2 = axes[1].barh(y_pos, returns, color=colors, edgecolor="#001219", lw=0.9, height=0.6, alpha=0.9)
+    bars2 = axes[1].barh(y_pos, returns, color=colors, edgecolor="none", height=0.6, alpha=0.9)
     axes[1].set_yticks(y_pos)
     axes[1].set_yticklabels(labels, fontsize=11)
     axes[1].set_xlabel(r"Mean Return at Convergence $\mathbb{E}[R]$", fontsize=11)
     axes[1].set_title(r"\textbf{Convergence Quality: Final Return}", fontsize=12, pad=10)
-    axes[1].set_xlim(175, 220)
+    axes[1].set_xlim(175, 222)
     axes[1].grid(True, axis="x", linestyle="--", alpha=0.4)
 
     axes[1].axvline(x=200, color="#AE2012", linestyle="--", lw=1.5, label=r"Solved ($R \geq 200$)")
     axes[1].axvline(x=190, color="#E76F51", linestyle=":", lw=1.5, label=r"Target ($R \geq 190$)")
-    axes[1].legend(loc="lower right", framealpha=0.9, fontsize=9.5)
+    axes[1].legend(loc="lower left", framealpha=0.92, fontsize=9.0)
 
     for bar in bars2:
         w = bar.get_width()
@@ -450,14 +458,6 @@ def plot_convergence_bar_chart(summary_csv: str = "results/convergence_summary_t
             fontsize=10,
             fontweight="medium",
         )
-
-    # Add Category Legend / Annotations
-    legend_elements = [
-        plt.Rectangle((0, 0), 1, 1, facecolor=category_colors["Learning Rate"], edgecolor="black", label=r"Learning Rate $\alpha$"),
-        plt.Rectangle((0, 0), 1, 1, facecolor=category_colors["Discount Factor"], edgecolor="black", label=r"Discount Factor $\gamma$"),
-        plt.Rectangle((0, 0), 1, 1, facecolor=category_colors["Exploration-Exploitation (Entropy)"], edgecolor="black", label=r"Entropy $c_{\text{ent}}$"),
-    ]
-    axes[0].legend(handles=legend_elements, loc="lower right", framealpha=0.9, fontsize=9)
 
     plt.suptitle(
         r"\textbf{Hyperparameter Convergence Comparison: Time-to-Threshold ($R \geq 190$)}",

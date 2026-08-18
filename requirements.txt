@@ -3,3 +3,7 @@ stable-baselines3
 tensorboard
 torch
 pygame-ce
+matplotlib
+pandas
+numpy
+scipy
