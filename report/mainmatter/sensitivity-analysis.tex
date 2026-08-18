@@ -1,12 +1,14 @@
 \section{Hyperparameter Sensitivity Analysis}
 \label{sec:sensitivity_analysis}
 
-To systematically investigate algorithm sensitivity and identify the critical drivers of policy synthesis, a comprehensive parametric study was conducted across three foundational hyperparameters: learning rate $\alpha$, discount factor $\gamma$, and entropy coefficient $c_{\text{ent}}$. Each configuration was evaluated using automated convergence criteria, where convergence is defined as achieving a mean evaluation return $\bar{R} \ge 190.0$ with a landing success rate $\ge 90\%$. The empirical convergence statistics are compiled in \Cref{tab:sensitivity_summary}, and the comparative convergence speeds are depicted in \Cref{fig:convergence_barplot}.
+Hyperparameter selection strongly influences the learning speed, stability, and final performance of reinforcement learning controllers \cite{vankampen2025lecture}. To evaluate the sensitivity of the PPO agent, three critical parameters were systematically analyzed: the learning rate $\alpha$, the discount factor $\gamma$, and the entropy coefficient $c_{\text{ent}}$.
+
+A certified convergence criterion was defined to evaluate training: achieving a mean evaluation reward $\bar{R} \ge 190.0$ with a landing success rate $\ge 90\%$. The comparative results are summarized in \Cref{tab:sensitivity_summary}.
 
 \begin{table}[H]
     \centering
     \footnotesize
-    \caption{Empirical convergence benchmark across learning rate, discount factor, and entropy coefficient variations.}
+    \caption{Summary of hyperparameter tuning experiments and convergence metrics.}
     \label{tab:sensitivity_summary}
     \begin{tabular}{llrrrrrr}
         \toprule
@@ -30,35 +32,60 @@ To systematically investigate algorithm sensitivity and identify the critical dr
     \end{tabular}
 \end{table}
 
+\subsection{Influence of the Learning Rate \texorpdfstring{$\alpha$}{alpha}}
+The learning rate $\alpha$ controls the step size taken by the Adam optimizer when updating the weights of the Actor and Critic neural networks. Three values were tested: $1.0 \times 10^{-4}$, $3.0 \times 10^{-4}$, and $1.0 \times 10^{-3}$.
+
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.88\linewidth]{figures/convergence_comparison_barplot.pdf}
-    \caption{Comparative training steps and wall-clock execution time required to reach certified policy convergence across parametric variations.}
-    \label{fig:convergence_barplot}
+    \includegraphics[width=0.82\linewidth]{figures/sensitivity_learning_rate.pdf}
+    \caption{Evaluation reward progression for different learning rates $\alpha$.}
+    \label{fig:sensitivity_lr}
 \end{figure}
 
-\subsection{Influence of Optimization Learning Rate \texorpdfstring{$\alpha$}{alpha}}
-The optimization learning rate dictates the gradient step magnitude during Adam network updates. As shown in \Cref{tab:sensitivity_summary}, increasing $\alpha$ from $1.0 \times 10^{-4}$ to $1.0 \times 10^{-3}$ monotonically accelerates convergence, reducing required environment interactions from $190{,}000$ steps ($224.9\,\si{s}$) to $70{,}000$ steps ($81.2\,\si{s}$). 
-
-However, an aggressive rate ($\alpha = 1.0 \times 10^{-3}$) induces minor policy jitter in steady-state hover, resulting in slightly lower asymptotic fuel conservation ($40.8\%$ vs. $49.1\%$). The intermediate rate $\alpha = 3.0 \times 10^{-4}$ delivers optimal stability and rapid convergence ($90{,}000$ steps) without incurring gradient pathology.
-
-\subsection{Influence of Planning Horizon and Discount Factor \texorpdfstring{$\gamma$}{gamma}}
-The discount factor $\gamma$ defines the geometric decay of future reward signals. A dramatic performance divergence is observed across values:
+As shown in \Cref{fig:sensitivity_lr}, increasing the learning rate directly speeds up initial policy acquisition:
 \begin{itemize}[leftmargin=*,label=$\bullet$]
-    \item \textbf{Myopic Failure ($\gamma = 0.95$):} The agent completely fails to synthesize a landing policy, exhibiting zero successful touchdowns ($0.0\%$) and an evaluation return of $-115.76$. Over a typical $300$-step descent trajectory, the terminal $+100.0$ touchdown reward at step $t=200$ is discounted by $\gamma^{200} = 0.95^{200} \approx 3.5 \times 10^{-5}$. Consequently, the distant terminal objective provides negligible gradient signal; the agent greedily exploits local potential gains by burning maximum thrust immediately, causing premature propellant exhaustion.
-    \item \textbf{Far-Sighted Fuel Economy ($\gamma = 0.999$):} Expanding the planning horizon to $\gamma = 0.999$ increases asymptotic propellant conservation to a remarkable $64.87\%$. Because long-term cumulative fuel penalties are accurately integrated across the entire trajectory, the agent learns an optimal ballistic coast phase followed by a high-efficiency gravity-turn terminal deceleration.
+    \item With $\alpha = 1.0 \times 10^{-3}$, the agent reaches convergence the fastest, requiring only $70{,}000$ steps ($383$ episodes). However, large weight updates introduce slight jitter during fine hover control, resulting in slightly lower fuel remaining ($40.8\%$).
+    \item With $\alpha = 1.0 \times 10^{-4}$, training is very stable and achieves a high final reward ($210.61$), but requires $190{,}000$ steps to converge.
+    \item The nominal value $\alpha = 3.0 \times 10^{-4}$ provides a balanced compromise between fast learning ($90{,}000$ steps) and smooth control.
 \end{itemize}
 
-\subsection{Influence of Policy Entropy Regularization \texorpdfstring{$c_{\text{ent}}$}{c_ent}}
-As established in \Cref{sec:rl_controller_design}, continuous action exploration requires sustaining policy distribution entropy. The empirical results substantiate this theoretical requirement:
-\begin{itemize}[leftmargin=*,label=$\bullet$]
-    \item At $c_{\text{ent}} = 0.0$, the absence of entropy regularization allows the Gaussian covariance $\boldsymbol{\Sigma}_\theta$ to prematurely shrink, locking the policy into a conservative, high-thrust strategy that converges slowly ($120{,}000$ steps) and burns excessive fuel ($31.3\%$ remaining).
-    \item Introducing $c_{\text{ent}} = 0.05$ actively incentivizes continuous action exploration, accelerating convergence to $90{,}000$ steps ($482$ episodes) and achieving superior terminal returns ($196.65$) and higher propellant conservation ($42.8\%$).
-\end{itemize}
+\subsection{Influence of the Discount Factor \texorpdfstring{$\gamma$}{gamma}}
+The discount factor $\gamma$ defines the agent's effective planning horizon, determining how heavily future rewards are weighted against immediate rewards \cite{vankampen2025lecture}. Three values were compared: $0.95$, $0.99$, and $0.999$.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.92\linewidth]{figures/sensitivity_comparison_dashboard.pdf}
-    \caption{Multi-panel sensitivity dashboard contrasting evaluation return progression across sweeps of (a) Learning Rate, (b) Discount Factor, and (c) Entropy Regularization.}
-    \label{fig:sensitivity_dashboard}
+    \includegraphics[width=0.82\linewidth]{figures/sensitivity_gamma.pdf}
+    \caption{Evaluation reward progression for different discount factors $\gamma$.}
+    \label{fig:sensitivity_gamma}
+\end{figure}
+
+The discount factor proved to be the most influential hyperparameter in this study:
+\begin{itemize}[leftmargin=*,label=$\bullet$]
+    \item \textbf{Complete Failure with $\gamma = 0.95$:} The agent completely failed to learn a successful landing policy ($0\%$ success rate, $-115.76$ average reward). In a typical descent lasting $200$ to $300$ steps, discounting by $\gamma = 0.95$ reduces the value of the $+100$ touchdown reward at step $200$ to $0.95^{200} \approx 3.5 \times 10^{-5}$, making the final landing goal virtually invisible to the agent during flight. As a result, the agent acts myopically, firing full thrusters early to maximize immediate position shaping and running out of fuel before touching down.
+    \item \textbf{Far-Sighted Planning with $\gamma = 0.999$:} By extending the planning horizon, the agent accounts for the cumulative fuel penalty over the entire descent. This encourages the agent to discover a fuel-efficient ballistic coast followed by a timely braking burn, conserving an impressive $64.9\%$ of propellant at touchdown.
+\end{itemize}
+
+\subsection{Influence of the Entropy Coefficient \texorpdfstring{$c_{\text{ent}}$}{c_ent}}
+In continuous RL, the entropy coefficient $c_{\text{ent}}$ governs the exploration-exploitation balance by penalizing premature collapse of the Gaussian policy variance $\sigma^2$. Three values were evaluated: $0.0$, $0.01$, and $0.05$.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.82\linewidth]{figures/sensitivity_ent_coef.pdf}
+    \caption{Evaluation reward progression for different entropy regularization coefficients $c_{\text{ent}}$.}
+    \label{fig:sensitivity_entropy}
+\end{figure}
+
+\begin{itemize}[leftmargin=*,label=$\bullet$]
+    \item With $c_{\text{ent}} = 0.0$ (no entropy bonus), the action variance shrinks quickly, locking the agent into an overly conservative policy that converges more slowly ($120{,}000$ steps) and burns more propellant ($31.3\%$ remaining).
+    \item With $c_{\text{ent}} = 0.05$, active exploration across continuous throttle combinations allows the agent to discover efficient landing maneuvers faster, reaching convergence in $90{,}000$ steps with $100\%$ landing success and $42.8\%$ fuel remaining.
+\end{itemize}
+
+\subsection{Overall Convergence Comparison}
+A comparison of the total environment steps and wall-clock execution time required to reach certified convergence is shown in \Cref{fig:convergence_barplot}. The results demonstrate that an adequate planning horizon ($\gamma \ge 0.99$) combined with active continuous exploration ($c_{\text{ent}} > 0$) is essential for reliable convergence.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\linewidth]{figures/convergence_comparison_barplot.pdf}
+    \caption{Comparison of training steps and execution time to achieve certified convergence across hyperparameter configurations.}
+    \label{fig:convergence_barplot}
 \end{figure}

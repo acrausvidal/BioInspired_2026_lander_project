@@ -4,21 +4,16 @@
     \toprule
     Abbreviation & Definition \\
     \midrule\endhead
+    AC           & Actor-Critic \\
     ACD          & Adaptive Critic Design \\
     ANN          & Artificial Neural Network \\
-    DOF          & Degree of Freedom \\
-    DP           & Dynamic Programming \\
     GAE          & Generalized Advantage Estimation \\
-    KL           & Kullback-Leibler \\
-    MC           & Monte Carlo \\
-    MDP          & Markov Decision Process \\
     MLP          & Multi-Layer Perceptron \\
+    MSE          & Mean Squared Error \\
     PPO          & Proximal Policy Optimization \\
+    RCS          & Reaction Control System \\
     RL           & Reinforcement Learning \\
-    RMS          & Root Mean Square \\
-    SAC          & Soft Actor-Critic \\
     TD           & Temporal Difference \\
-    TRPO         & Trust Region Policy Optimization \\
     \bottomrule
 \end{longtable}
 
@@ -28,42 +23,38 @@
     \toprule
     Symbol & Definition & Unit \\
     \midrule\endhead
-    $a_t, \mathbf{u}_t$ & Control action vector at step $t$ & [-] \\
     $\hat{A}_t$         & Advantage function estimate & [-] \\
     $c_{\text{ent}}$    & Policy entropy bonus coefficient & [-] \\
-    $c_v$               & Value function loss weighting coefficient & [-] \\
-    $f(t)$              & Normalized propellant fraction ($F(t)/F_0$) & [-] \\
-    $F(t)$              & Instantaneous propellant mass & [kg] \\
-    $F_0$               & Initial total propellant capacity & [kg] \\
-    $g$                 & Lunar gravitational acceleration ($1.62\,\text{m/s}^2$ scaled to $10.0$) & [$\text{m/s}^2$] \\
-    $I_{zz}(t)$         & Planar moment of inertia about center of mass & [$\text{kg}\cdot\text{m}^2$] \\
-    $m(t)$              & Instantaneous vehicle total mass & [kg] \\
-    $\dot{m}$           & Propellant mass consumption rate & [kg/s] \\
-    $Q^\pi(s, a)$       & Action-value function under policy $\pi$ & [-] \\
-    $r_t$               & Immediate scalar reward at timestep $t$ & [-] \\
+    $c_v$               & Value loss weighting coefficient & [-] \\
+    $F(t)$              & Instantaneous fuel capacity / remaining fuel & [units] \\
+    $F_0$               & Initial total fuel capacity ($100.0$) & [units] \\
+    $g$                 & Lunar gravitational acceleration ($10.0$) & [$\text{m/s}^2$] \\
+    $I_{zz}(t)$         & Mass moment of inertia about pitch axis & [$\text{kg}\cdot\text{m}^2$] \\
+    $m(t)$              & Total lander mass & [kg] \\
+    $r_t$               & Scalar reward at time step $t$ & [-] \\
     $R_t$               & Discounted cumulative return & [-] \\
-    $s_t, \mathbf{x}_t$ & Environmental state vector at timestep $t$ & [-] \\
-    $t$                 & Discrete environment timestep or continuous time & [s] \\
-    $u_{\text{main}}$   & Main engine throttle command ($[0.5, 1.0]$) & [-] \\
-    $u_{\text{side}}$   & Lateral thruster throttle command ($[-1.0, 1.0]$) & [-] \\
+    $s_t$               & Environment state observation vector & [-] \\
+    $t$                 & Discrete simulation time step & [s] \\
+    $u_t$               & Continuous action vector $[u_1, u_2]$ & [-] \\
+    $u_{\text{main}}$   & Main engine throttle ($[0.5, 1.0]$) & [-] \\
+    $u_{\text{side}}$   & Lateral thruster throttle ($[-1.0, 1.0]$) & [-] \\
     $v_x, v_y$          & Horizontal and vertical linear velocities & [m/s] \\
-    $V^\pi(s)$          & State-value function under policy $\pi$ & [-] \\
-    $x, y$              & Planar position coordinates relative to landing pad & [m] \\
+    $V(s)$              & State-value function & [-] \\
+    $x, y$              & Planar coordinates relative to landing pad & [m] \\
     \midrule
-    $\alpha$            & Neural network optimization learning rate & [-] \\
+    $\alpha$            & Neural network learning rate & [-] \\
     $\gamma$            & Future reward discount factor & [-] \\
-    $\delta_t$          & Temporal Difference (TD) residual error & [-] \\
-    $\epsilon_{\text{clip}}$ & PPO surrogate objective clipping threshold & [-] \\
-    $\theta$            & Pitch/attitude orientation angle or Actor weights & [rad] / [-] \\
-    $\lambda$           & GAE exponential variance-bias trade-off parameter & [-] \\
-    $\mu_\theta(s)$     & Mean of Gaussian policy action distribution & [-] \\
-    $\pi_\theta(a|s)$   & Parameterized stochastic control policy & [-] \\
-    $\rho(t)$           & Instantaneous structural body density & [$\text{kg/m}^2$] \\
+    $\delta_t$          & Temporal Difference (TD) residual & [-] \\
+    $\epsilon_{\text{clip}}$ & PPO clipping threshold ($0.20$) & [-] \\
+    $\theta$            & Pitch orientation angle & [rad] \\
+    $\lambda$           & GAE exponential weighting factor ($0.95$) & [-] \\
+    $\mu(s)$            & Mean of Gaussian policy action distribution & [-] \\
+    $\pi(u \mid s)$     & Control policy & [-] \\
+    $\rho(t)$           & Lander body density & [$\text{kg/m}^2$] \\
     $\rho_0$            & Initial wet body density ($5.0$) & [$\text{kg/m}^2$] \\
-    $\rho_{\text{dry}}$ & Dry body density at fuel exhaustion ($2.5$) & [$\text{kg/m}^2$] \\
-    $\sigma_\theta(s)$  & Standard deviation of Gaussian policy distribution & [-] \\
-    $\phi$              & Value function (Critic) neural network weights & [-] \\
-    $\Phi(s)$           & Potential function for potential-based reward shaping & [-] \\
-    $\omega$            & Pitch angular velocity ($\dot{\theta}$) & [rad/s] \\
+    $\rho_{\text{dry}}$ & Dry body density ($2.5$) & [$\text{kg/m}^2$] \\
+    $\sigma$            & Standard deviation of Gaussian policy distribution & [-] \\
+    $\phi$              & Critic neural network weights & [-] \\
+    $\omega$            & Pitch angular velocity & [rad/s] \\
     \bottomrule
 \end{longtable}

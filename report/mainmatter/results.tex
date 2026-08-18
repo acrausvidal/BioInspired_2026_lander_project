@@ -1,44 +1,45 @@
-\section{Results and Learned Flight Strategy Analysis}
+\section{Results and Learned Flight Strategy}
 \label{sec:results}
 
 \subsection{Closed-Loop Flight Trajectory Analysis}
-The flight dynamics and actuation commands synthesized by the converged PPO agent during a representative descent trajectory are illustrated across six synchronized time-history channels in \Cref{fig:trajectory_overview}. The learned control law executes a three-phase optimal landing strategy:
+To understand the control behavior discovered by the trained PPO agent, a representative nominal landing trajectory was evaluated and recorded across multiple channels. \Cref{fig:trajectory_overview} shows the time history of altitude, horizontal position, pitch angle, remaining propellant, and the continuous engine commands.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.92\linewidth]{figures/trajectory_analysis.pdf}
-    \caption{Multi-channel trajectory profile of the converged closed-loop PPO controller during nominal descent, illustrating altitude, horizontal displacement, pitch regulation, mass depletion, and continuous throttle commands.}
+    \includegraphics[width=0.88\linewidth]{figures/trajectory_analysis.pdf}
+    \caption{Time history of a representative closed-loop landing flight: position, velocity, pitch angle, mass depletion, and continuous throttle commands.}
     \label{fig:trajectory_overview}
 \end{figure}
 
+The learned control policy executes an intuitive three-stage landing strategy:
 \begin{enumerate}[leftmargin=*,label=\textbf{\arabic*.}]
-    \item \textbf{Phase I: Attitude Capture and Cross-Track Steering ($t \in [0.0, 2.2]\,\si{s}$):} Dispatched from high altitude with stochastic initial velocity and attitude disturbances ($\theta_0 \sim \mathcal{U}(-0.3, 0.3)\,\si{rad}$), the controller immediately engages differential RCS pulsing ($|u_{\text{side}}| \approx 0.60$) to arrest angular momentum ($\omega \to 0$). Simultaneously, the agent banks into a controlled tilt angle ($\theta \approx 0.15\,\si{rad}$), directing a component of main engine thrust to nullify cross-track horizontal velocity ($v_x \to 0$).
-    \item \textbf{Phase II: Mass-Adaptive Gravity-Turn Deceleration ($t \in [2.2, 5.8]\,\si{s}$):} As the vehicle approaches the vertical axis of the landing pad, the controller re-aligns the fuselage upright ($\theta \to 0$) and increases main throttle ($u_{\text{main}} \approx 0.70$). Critically, as propellant burns at $0.40\,\text{units/step}$ and the structural mass declines dynamically from $m_{\text{wet}} \approx 4.82\,\si{kg}$ toward dry mass, the physical control authority $\vec{F}_{\text{main}}/m(t)$ increases. Demonstrating deep closed-loop adaptability, the Actor network dynamically throttles back main engine output from $0.78$ down to $0.58$, maintaining a smooth, constant descent deceleration without inducing vertical limit cycles or overshoot.
-    \item \textbf{Phase III: Terminal Touchdown and Quiescent Settling ($t \in [5.8, 7.6]\,\si{s}$):} In the terminal $1.5\,\si{m}$ descent bracket, the agent executes gentle throttle pulses to establish a steady descent velocity $v_y \approx -0.10\,\si{m/s}$. Both articulated cantilever legs make simultaneous contact with the terrain; the kinetic energy is absorbed by the revolute spring-damper joints, and the lander settles safely to rest in the sleep state.
+    \item \textbf{Initial Attitude Alignment ($t \in [0, 2]\,\si{s}$):} The lander starts at the top of the viewport with a random initial tilt and velocity disturbance. The agent immediately uses short side-thruster bursts ($|u_2| \approx 0.6$) to cancel out angular velocity ($\omega \to 0$) and re-orient the vehicle towards the vertical.
+    \item \textbf{Controlled Deceleration with Mass Adaptation ($t \in [2, 6]\,\si{s}$):} As the lander falls towards the surface, the agent throttles up the main engine ($u_1 \approx 0.70$) to arrest its downward descent speed. Crucially, as propellant is consumed and the vehicle becomes lighter (losing $\approx 25\%$ of its mass during the burn), the agent smoothly dials back the main engine throttle from $0.78$ down to $0.58$. This demonstrates that the neural network has learned to adapt to the increasing thrust-to-weight ratio without over-correcting or bouncing back upwards.
+    \item \textbf{Touchdown and Quiescent Settling ($t \in [6, 7.6]\,\si{s}$):} Near the ground, the controller applies brief throttle pulses to achieve a gentle vertical touchdown speed ($v_y \approx -0.10\,\si{m/s}$). Both landing legs touch the ground simultaneously, absorbing the residual kinetic energy, and the engines shut off completely as the lander settles safely to rest.
 \end{enumerate}
 
-\subsection{Quantitative Touchdown Performance Benchmark}
-To rigorously quantify the operational precision and dispersion statistics of the closed-loop controller, a Monte Carlo evaluation campaign comprising $N=50$ stochastic landing trials was conducted with randomized initial disturbance forces ($\pm 1000\,\si{N}$) and terrain geometries. The aggregated performance metrics are presented in \Cref{tab:touchdown_metrics}.
+\subsection{Monte Carlo Performance Evaluation}
+To evaluate the reliability of the controller, a Monte Carlo test campaign of $N=50$ flights was conducted with randomized initial disturbance forces and terrain profiles. The performance statistics are summarized in \Cref{tab:touchdown_metrics}.
 
 \begin{table}[H]
     \centering
-    \small
-    \caption{Monte Carlo touchdown performance statistics across 50 stochastic evaluation flights.}
+    \footnotesize
+    \caption{Performance statistics across 50 stochastic evaluation flights.}
     \label{tab:touchdown_metrics}
-    \begin{tabularx}{0.88\textwidth}{lrrr}
+    \begin{tabular}{lrrr}
         \toprule
-        \textbf{Flight Performance Metric} & \textbf{Mean ($\mu$)} & \textbf{Std. Dev. ($\sigma$)} & \textbf{Target Envelope} \\
+        \textbf{Metric} & \textbf{Mean ($\mu$)} & \textbf{Std. Dev. ($\sigma$)} & \textbf{Target Envelope} \\
         \midrule
-        Landing Success Rate (\%)          & $98.0\%$              & ---                           & $\ge 90.0\%$ \\
+        Landing Success Rate (\%)           & $98.0\%$              & ---                           & $\ge 90.0\%$ \\
         Touchdown Horizontal Position ($x$) & $+0.014\,\si{m}$      & $\pm 0.042\,\si{m}$           & $\le \pm 0.20\,\si{m}$ \\
-        Touchdown Vertical Velocity ($v_y$)& $-0.118\,\si{m/s}$    & $\pm 0.048\,\si{m/s}$         & $\le 0.50\,\si{m/s}$ \\
-        Touchdown Horizontal Velocity ($v_x$)& $+0.012\,\si{m/s}$  & $\pm 0.028\,\si{m/s}$         & $\le 0.20\,\si{m/s}$ \\
-        Touchdown Pitch Attitude ($\theta$) & $+0.006\,\si{rad}$   & $\pm 0.021\,\si{rad}$         & $\le \pm 0.10\,\si{rad}$ \\
-        Touchdown Angular Rate ($\omega$)  & $+0.003\,\si{rad/s}$  & $\pm 0.018\,\si{rad/s}$       & $\le \pm 0.05\,\si{rad/s}$ \\
-        Propellant Conserved at Touchdown  & $53.82\%$             & $\pm 4.61\%$                  & $\ge 30.0\%$ \\
-        Total Descent Duration             & $7.58\,\si{s}$        & $\pm 0.74\,\si{s}$            & $\le 12.0\,\si{s}$ \\
+        Touchdown Vertical Velocity ($v_y$) & $-0.118\,\si{m/s}$    & $\pm 0.048\,\si{m/s}$         & $\le 0.50\,\si{m/s}$ \\
+        Touchdown Horizontal Velocity ($v_x$)& $+0.012\,\si{m/s}$   & $\pm 0.028\,\si{m/s}$         & $\le 0.20\,\si{m/s}$ \\
+        Touchdown Pitch Angle ($\theta$)    & $+0.006\,\si{rad}$    & $\pm 0.021\,\si{rad}$         & $\le \pm 0.10\,\si{rad}$ \\
+        Touchdown Angular Rate ($\omega$)   & $+0.003\,\si{rad/s}$  & $\pm 0.018\,\si{rad/s}$       & $\le \pm 0.05\,\si{rad/s}$ \\
+        Remaining Fuel at Touchdown (\%)    & $53.82\%$             & $\pm 4.61\%$                  & $\ge 30.0\%$ \\
+        Descent Flight Time ($t$)           & $7.58\,\si{s}$        & $\pm 0.74\,\si{s}$            & $\le 12.0\,\si{s}$ \\
         \bottomrule
-    \end{tabularx}
+    \end{tabular}
 \end{table}
 
-The empirical statistics confirm that the synthesized continuous PPO policy satisfies all precision landing constraints with high margin: horizontal position dispersion remains confined within $\pm 4.2\,\si{cm}$, vertical touchdown velocity is held at $0.12\,\si{m/s}$ (far below structural gear thresholds), and pitch angle at impact is strictly regulated within $0.34\deg$, while conserving over $53\%$ of initial propellant reserves.
+The agent achieves a $98.0\%$ landing success rate, maintaining lateral landing precision within $\pm 4.2\,\si{cm}$ and a soft vertical touchdown speed of $-0.12\,\si{m/s}$ while retaining more than half of its initial fuel reserve.

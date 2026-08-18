@@ -1,71 +1,57 @@
 \section{Reinforcement Learning Controller Design}
 \label{sec:rl_controller_design}
 
-\subsection{Continuous Markov Decision Process Formulation}
-The autonomous flight control problem is cast as a continuous-state, continuous-action Markov Decision Process (MDP) formalized by the 5-tuple $\mathcal{M} = (\mathcal{S}, \mathcal{A}, \mathcal{P}, \mathcal{R}, \gamma)$ \cite{sutton2018reinforcement}:
+\subsection{Reinforcement Learning Framework}
+In Reinforcement Learning, the flight controller acts as an \emph{agent} interacting with the simulated flight \emph{environment} through a continuous feedback loop \cite{sutton2018reinforcement, vankampen2025lecture}. At each time step $t$, the agent receives a state observation $s_t$ from the environment, selects a continuous control action $u_t$, and receives a scalar reward $r_t$ alongside the next state $s_{t+1}$. 
+
+The goal of the agent is to learn an optimal policy $\pi(u \mid s)$ that maximizes the expected cumulative discounted future reward, known as the \emph{value function} $V(s)$ \cite{vankampen2025lecture}:
+\begin{equation}
+    V(s) = \mathbb{E} \left[ \sum_{k=0}^{\infty} \gamma^k r_{t+k+1} \;\middle|\; s_t = s \right],
+    \label{eq:value_function}
+\end{equation}
+where $\gamma \in [0, 1)$ is the discount factor specifying how much future rewards are valued relative to immediate rewards. Using the recursive Bellman property, the value function satisfies \cite{vankampen2025lecture}:
+\begin{equation}
+    V(s) = \mathbb{E} \left[ r_{t+1} + \gamma V(s_{t+1}) \;\middle|\; s_t = s \right].
+    \label{eq:bellman_equation}
+\end{equation}
+
+\subsection{Actor-Critic Architecture and Function Approximation}
+For simple discrete tasks, value functions can be stored in lookup tables (e.g., standard Q-tables). However, as highlighted in the course lectures \cite{vankampen2025lecture}, discretizing a continuous 9-dimensional state space and a 2-dimensional continuous action space creates an intractable curse of dimensionality. For continuous flight control, function approximators such as Artificial Neural Networks (ANNs) are necessary \cite{vankampen2025lecture}.
+
+An \textbf{Actor-Critic} (or Adaptive Critic Design) architecture is utilized:
 \begin{itemize}[leftmargin=*,label=$\bullet$]
-    \item \textbf{State Space} $\mathcal{S} \subseteq \mathbb{R}^9$: The observation vector $\mathbf{s}_t \in \mathcal{S}$ incorporates kinematic states, contact flags, and the propellant reserve:
-    \begin{equation}
-        \mathbf{s}_t = \begin{bmatrix} \tilde{x}_t, & \tilde{y}_t, & \tilde{v}_{x,t}, & \tilde{v}_{y,t}, & \theta_t, & \tilde{\omega}_t, & c_{\text{leg},1}, & c_{\text{leg},2}, & f(t) \end{bmatrix}^T \in \mathbb{R}^9,
-        \label{eq:state_vector}
-    \end{equation}
-    where $\tilde{x}_t, \tilde{y}_t \in [-1.0, 1.0]$ denote viewport-normalized Cartesian coordinates, $\tilde{v}_{x,t}, \tilde{v}_{y,t}$ represent frame-scaled linear velocities, $\theta_t \in [-\pi, \pi]$ is the pitch angle, $\tilde{\omega}_t$ is the scaled angular velocity, $c_{\text{leg},i} \in \{0.0, 1.0\}$ denote binary contact flags, and $f(t) = F(t)/F_0 \in [0.0, 1.0]$ provides mass-depletion observability.
-    \item \textbf{Action Space} $\mathcal{A} = [-1.0, 1.0]^2 \subset \mathbb{R}^2$: Two-dimensional continuous control commands directing axial main throttle and lateral reaction thrusters.
-    \item \textbf{Transition Probability Density} $\mathcal{P}(\mathbf{s}_{t+1} \mid \mathbf{s}_t, \mathbf{a}_t)$: Represents the stochastic environmental transition model governed by continuous Box2D numerical integration subject to wind turbulence and initial impulse dispersion.
-    \item \textbf{Discount Factor} $\gamma \in (0, 1)$: Determines the effective planning horizon for future rewards.
+    \item \textbf{Critic Network ($V_\phi$):} Approximates the value function $V(s)$. The network takes the 9-dimensional state vector as input and outputs a single scalar estimating the expected future return of that state.
+    \item \textbf{Actor Network ($\pi_\theta$):} Represents the control policy mapping states directly to continuous actions. The network takes the 9-dimensional state vector and parameterizes a Gaussian distribution $\mathcal{N}(\mu(s), \sigma^2)$, outputting the mean action $\mu(s)$ and a trainable standard deviation $\sigma$ for each control channel.
 \end{itemize}
+Both the Actor and Critic networks are implemented as Multi-Layer Perceptrons (MLPs) with two fully connected hidden layers of 128 neurons each and Hyperbolic Tangent ($\tanh$) activation functions.
 
-\subsection{Potential-Based Reward Shaping and Multi-Objective Penalization}
-A ubiquitous pathology in robotic RL is reward sparsity, where terminal-only rewards induce intractable exploration sample complexity \cite{ng1999policy}. Conversely, naive dense reward engineering can introduce parasitic local minima that alter the optimal policy. To guarantee asymptotic policy invariance while delivering dense guidance gradients, a potential-based reward shaping function $\Phi(\mathbf{s})$ is implemented \cite{ng1999policy}:
-\begin{equation}
-    \Phi(\mathbf{s}_t) = -100\sqrt{\tilde{x}_t^2 + \tilde{y}_t^2} - 100\sqrt{\tilde{v}_{x,t}^2 + \tilde{v}_{y,t}^2} - 100|\theta_t| + 10 c_{\text{leg},1} + 10 c_{\text{leg},2}.
-    \label{eq:potential_function}
-\end{equation}
+\subsection{Continuous Exploration: Why \texorpdfstring{$\epsilon$}{epsilon}-Greedy Fails vs. Entropy Regularization}
+In discrete RL algorithms (such as Q-learning), exploration is commonly handled using an $\epsilon$-greedy strategy, where the agent selects a random discrete action with probability $\epsilon$ and the greedy action with probability $1-\epsilon$. 
 
-The step reward $r(\mathbf{s}_t, \mathbf{a}_t, \mathbf{s}_{t+1})$ synthesized at each discrete step comprises potential differences, actuator expenditure penalties, mass depletion costs, and terminal evaluation:
-\begin{equation}
-    r_t = \underbrace{\left( \Phi(\mathbf{s}_{t+1}) - \Phi(\mathbf{s}_t) \right)}_{\text{Potential Shaping Difference}} - \underbrace{(0.30\,u_{\text{main}} + 0.03\,|u_{\text{side}}|)}_{\text{Actuator Wear Penalty}} - \underbrace{c_{\text{fuel}} \cdot \Delta F_t}_{\text{Mass Depletion Penalty}} + r_{\text{term}},
-    \label{eq:full_reward}
-\end{equation}
-where $c_{\text{fuel}} = 0.50$ enforces propellant conservation, and $r_{\text{term}} \in \{-100.0, +100.0\}$ is triggered solely at terminal states. According to the foundational theorem of Ng et al. \cite{ng1999policy}, the difference form $\Phi(\mathbf{s}_{t+1}) - \Phi(\mathbf{s}_t)$ ensures that the optimal policy $\pi^*$ under shaped rewards is strictly identical to that under unshaped terminal rewards.
-
-\subsection{Actor-Critic Multi-Layer Perceptron Architecture}
-In continuous high-dimensional domains, classical tabular Dynamic Programming (DP) and discrete Temporal Difference (TD) methods suffer from Bellman's curse of dimensionality, where memory requirements scale exponentially with state-action resolution \cite{sutton2018reinforcement, vankampen2025lecture}. To achieve universal function approximation, an Adaptive Critic Design (ACD) is realized using deep Artificial Neural Networks (ANNs) \cite{vankampen2025lecture}.
-
-The architecture decouples policy generation and state-value estimation into distinct Multi-Layer Perceptrons (MLPs):
+However, $\epsilon$-greedy cannot be directly applied to continuous flight control:
 \begin{enumerate}[leftmargin=*,label=\textbf{\arabic*.}]
-    \item \textbf{Actor Network} $\pi_\theta(\mathbf{a} \mid \mathbf{s})$: Parameterized by weights $\theta$, the actor maps the 9D observation vector through two fully connected hidden layers of 128 neurons each with hyperbolic tangent ($\tanh$) activation functions. The output layer parameterizes a multivariate Gaussian distribution $\mathcal{N}(\boldsymbol{\mu}_\theta(\mathbf{s}), \boldsymbol{\Sigma}_\theta)$, where $\boldsymbol{\mu}_\theta(\mathbf{s}) \in \mathbb{R}^2$ represents state-dependent action means and $\boldsymbol{\Sigma}_\theta = \text{diag}(\sigma_1^2, \sigma_2^2)$ is a state-independent trainable diagonal covariance matrix.
-    \item \textbf{Critic Network} $V_\phi(\mathbf{s})$: Parameterized by weights $\phi$, the critic acts as a baseline estimator mapping states to expected scalar returns $V_\phi: \mathcal{S} \to \mathbb{R}$, sharing an identical topology of two hidden layers with 128 units and $\tanh$ activations.
+    \item \textbf{Destabilizing Control Chattering:} Sampling completely random continuous actions across $[-1, 1]$ introduces abrupt, high-frequency control spikes. In a dynamic aerospace system, such chattering causes severe attitude oscillations, structural wear, and immediate crashes before useful flight data can be gathered \cite{vankampen2025lecture}.
+    \item \textbf{Loss of Policy Gradients:} Hard random switching prevents smooth gradient backpropagation through the policy parameters.
 \end{enumerate}
 
-\subsection{Proximal Policy Optimization (PPO) and Generalized Advantage Estimation}
-Policy optimization is performed using Proximal Policy Optimization (PPO) \cite{schulman2017proximal}, which ensures monotonic policy improvement by enforcing a trust-region constraint via clipped objective formulation. The surrogate objective $L^{\text{CLIP}}(\theta)$ is defined as:
+Instead, continuous Actor-Critic algorithms explore smoothly by sampling actions from the parameterized Gaussian distribution $\pi(u \mid s) \sim \mathcal{N}(\mu(s), \sigma^2)$. The exploration-exploitation trade-off is governed by the \emph{entropy} (spread) of this distribution. To prevent the policy from prematurely collapsing its exploration variance ($\sigma \to 0$) into a suboptimal local strategy, an \textbf{entropy bonus} term $c_{\text{ent}} \mathcal{H}(\pi)$ is added to the training loss function:
+\begin{equation}
+    \mathcal{H}(\pi(\cdot \mid s)) = \frac{1}{2} \left( 1 + \ln(2\pi \sigma_1^2) \right) + \frac{1}{2} \left( 1 + \ln(2\pi \sigma_2^2) \right).
+    \label{eq:entropy_formula}
+\end{equation}
+The entropy coefficient $c_{\text{ent}}$ actively encourages the agent to explore different throttle combinations during early training while smoothly transitioning to deterministic, fine-tuned control as learning progresses.
+
+\subsection{Proximal Policy Optimization (PPO)}
+Standard policy gradient algorithms can suffer from high training instability if a gradient step causes a large, destructive policy update. Proximal Policy Optimization (PPO) \cite{schulman2017proximal} resolves this by clipping the policy probability ratio $r_t(\theta) = \frac{\pi_\theta(u_t \mid s_t)}{\pi_{\theta_{\text{old}}}(u_t \mid s_t)}$:
 \begin{equation}
     L^{\text{CLIP}}(\theta) = \hat{\mathbb{E}}_t \left[ \min\left( r_t(\theta)\hat{A}_t, \, \text{clip}(r_t(\theta), 1-\epsilon_{\text{clip}}, 1+\epsilon_{\text{clip}})\hat{A}_t \right) \right],
     \label{eq:ppo_clip}
 \end{equation}
-where $r_t(\theta) = \frac{\pi_\theta(\mathbf{a}_t \mid \mathbf{s}_t)}{\pi_{\theta_{\text{old}}}(\mathbf{a}_t \mid \mathbf{s}_t)}$ denotes the probability ratio between the updated and sampling policies, and $\epsilon_{\text{clip}} = 0.20$ is the clipping threshold parameter that prevents destructive step sizes.
+with clipping parameter $\epsilon_{\text{clip}} = 0.20$. The advantage function $\hat{A}_t$ is calculated using Generalized Advantage Estimation (GAE) \cite{schulman2015high} with $\lambda = 0.95$, which measures how much better taking action $u_t$ in state $s_t$ was compared to the average expected return. 
 
-The advantage function $\hat{A}_t$ is computed using Generalized Advantage Estimation (GAE) \cite{schulman2015high}, which strikes an optimal bias-variance balance by exponentially weighting multi-step Temporal Difference residuals $\delta_t^V$:
+The complete PPO loss minimized by the Adam optimizer combines the clipped policy objective, the Critic value function error, and the entropy exploration bonus:
 \begin{equation}
-    \hat{A}_t^{\text{GAE}(\gamma, \lambda)} = \sum_{l=0}^\infty (\gamma \lambda)^l \delta_{t+l}^V, \quad \text{with} \quad \delta_t^V = r_t + \gamma V_\phi(\mathbf{s}_{t+1}) - V_\phi(\mathbf{s}_t),
-    \label{eq:gae_advantage}
+    L^{\text{PPO}}(\theta, \phi) = -\hat{\mathbb{E}}_t \left[ L^{\text{CLIP}}(\theta) - c_v (V_\phi(s_t) - R_t)^2 + c_{\text{ent}} \mathcal{H}(\pi_\theta(\cdot \mid s_t)) \right],
+    \label{eq:ppo_total_loss}
 \end{equation}
-where $\gamma = 0.99$ and $\lambda = 0.95$. The overall joint objective minimized via Adam optimization across batch rollouts is:
-\begin{equation}
-    L^{\text{PPO}}(\theta, \phi) = -\hat{\mathbb{E}}_t \left[ L^{\text{CLIP}}(\theta) - c_v (V_\phi(\mathbf{s}_t) - R_t)^2 + c_{\text{ent}} \mathcal{H}(\pi_\theta(\cdot \mid \mathbf{s}_t)) \right],
-    \label{eq:joint_loss}
-\end{equation}
-where $c_v = 0.50$ is the value loss coefficient, $R_t$ is the empirical discounted return, and $c_{\text{ent}}$ is the entropy coefficient.
-
-\subsection{Continuous Exploration Dynamics: Entropy Regularization vs. \texorpdfstring{$\epsilon$}{epsilon}-Greedy}
-A fundamental conceptual distinction between discrete and continuous RL lies in the mathematical realization of the exploration-exploitation trade-off \cite{sutton2018reinforcement, haarnoja2018soft}:
-\begin{itemize}[leftmargin=*,label=$\bullet$]
-    \item \textbf{Invalidity of Discrete $\epsilon$-Greedy in Continuous Domains:} In discrete action spaces ($|\mathcal{A}| < \infty$), the standard $\epsilon$-greedy heuristic selects the greedy action with probability $1-\epsilon$ and samples uniformly from the discrete set with probability $\epsilon$. In continuous action manifolds ($\mathcal{A} \subseteq \mathbb{R}^d$), however, uniform sampling across the infinite continuous domain produces discontinuous, chattering control spikes that cause violent plant instabilities and severe thruster degradation in aerospace flight systems \cite{vankampen2025lecture}. Furthermore, uniform discontinuous random switching introduces zero-gradient steps that disrupt backpropagation through stochastic policy distributions \cite{williams1992simple}.
-    \item \textbf{Entropy-Regularized Stochastic Policy Exploration:} In continuous control, exploration is governed natively by the differential entropy $\mathcal{H}(\pi_\theta(\cdot \mid \mathbf{s}_t))$ of the parameterized action distribution \cite{haarnoja2018soft}. For a $d$-dimensional multivariate Gaussian policy $\pi_\theta(\mathbf{a} \mid \mathbf{s}) \sim \mathcal{N}(\boldsymbol{\mu}_\theta(\mathbf{s}), \text{diag}(\sigma_1^2, \dots, \sigma_d^2))$, the differential entropy is analytically expressed as:
-    \begin{equation}
-        \mathcal{H}(\pi_\theta(\cdot \mid \mathbf{s}_t)) = \frac{1}{2} \sum_{i=1}^d \left( 1 + \ln(2\pi \sigma_i^2) \right).
-        \label{eq:differential_entropy}
-    \end{equation}
-    Augmenting the policy gradient with the entropy objective term $+c_{\text{ent}}\mathcal{H}(\pi)$ penalizes premature shrinkage of the variance parameters ($\sigma_i \to 0$). This forces the agent to maintain sufficient stochastic spread in continuous action space during early training, preventing premature convergence to sub-optimal local equilibria (such as continuous engine cut-off or uncontrolled free-fall) while ensuring smooth, continuous trajectories.
-\end{itemize}
+where $c_v = 0.50$ is the value loss weighting and $R_t$ is the target return. Training is parallelized across 4 vector environments to ensure efficient data collection.

@@ -1,22 +1,22 @@
 \section{The Learning Effect and Training Convergence}
 \label{sec:learning_effect}
 
-\subsection{Empirical Convergence Analysis}
-To substantiate the learning effect and demonstrate asymptotic convergence, the nominal PPO controller was trained over $300{,}000$ global interaction steps across four parallelized vector environments. Policy evaluation was executed deterministically every $10{,}000$ global steps over $N=15$ evaluation episodes. The quantitative trajectory of learning metrics is illustrated in \Cref{fig:nominal_learning_curve}.
+\subsection{Nominal Training Progress}
+To evaluate the learning process, the nominal PPO agent was trained for $300{,}000$ environment timesteps across 4 parallel environments using the baseline hyperparameters ($\alpha = 3 \times 10^{-4}$, $\gamma = 0.99$, $c_{\text{ent}} = 0.01$). Every $10{,}000$ steps, the policy was evaluated over 15 test episodes without exploration noise. The resulting learning curves are presented in \Cref{fig:nominal_learning_curve}.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\linewidth]{figures/nominal_learning_curve.pdf}
-    \caption{Nominal training convergence of the PPO agent on the mass-varying Lunar Lander over 300k timesteps, showing mean evaluation return with $\pm 1\sigma$ confidence interval (top), landing success percentage (bottom-left), and propellant conserved at touchdown (bottom-right).}
+    \includegraphics[width=0.88\linewidth]{figures/nominal_learning_curve.pdf}
+    \caption{Training progression of the nominal PPO agent over 300k timesteps: mean evaluation reward with $\pm 1\sigma$ confidence band (top), safe landing success rate (bottom-left), and mean remaining propellant at touchdown (bottom-right).}
     \label{fig:nominal_learning_curve}
 \end{figure}
 
-The training trajectory exhibits three well-defined developmental regimes reflecting the progressive acquisition of flight control intelligence:
+The training history clearly displays three distinct learning phases:
 \begin{enumerate}[leftmargin=*,label=\textbf{\arabic*.}]
-    \item \textbf{Exploratory Chaos and Structural Collapse (0--50k steps):} During the initial interaction phase, the stochastic Gaussian policy samples wide variance actions. The agent lacks control authority over the unstable underactuated rotational mode, resulting in severe attitude departures ($|\theta| > 1.0\,\si{rad}$), premature propellant exhaustion, and a $100\%$ crash rate. Evaluation returns remain deeply negative, plunging to a minimum of $-250.93 \pm 82.26$ at 40k steps.
-    \item \textbf{Policy Breakthrough and Attitude Acquisition (50k--100k steps):} A rapid behavioral bifurcation occurs between 60k and 90k steps. Guided by the shaped potential field gradients, the Critic network resolves accurate value approximations, enabling the Actor to discover vertical attitude stabilization and counter-gravitational deceleration. The landing success rate undergoes a steep surge from $13.3\%$ at 60k steps to $86.7\%$ at 90k steps, while the mean evaluation return accelerates from $-78.38 \pm 120.71$ to $+194.27 \pm 123.92$.
-    \item \textbf{Asymptotic Refinement and Propellant Optimization (100k--300k steps):} Beyond 100k steps, the agent consistently exceeds the established environment solved criterion of $\bar{R} \ge 200.0$. The policy transitions from raw survival to precise kinetic energy management and fuel throttling. Peak mean return reaches $+224.14 \pm 32.81$ at 180k steps with a flawless $100\%$ safe landing rate. Simultaneously, the mean propellant conserved at touchdown stabilizes at $54.11 \pm 4.2\,\si{units}$ ($54.1\%$ fuel reserve), confirming that the agent learned an energy-efficient terminal descent throttle profile.
+    \item \textbf{Initial Exploration and Crashes (0 to 50k steps):} At the beginning of training, the agent knows nothing about the environment and takes random actions. It struggles to control the lander's attitude, frequently flipping upside down, burning fuel erratically, or crashing into the ground at high speeds ($100\%$ crash rate). The evaluation return drops to a low of $-250.93 \pm 82.26$ at 40k steps.
+    \item \textbf{Attitude Stabilization and Rapid Breakthrough (50k to 100k steps):} Between 50k and 100k steps, a dramatic improvement in performance is observed. The agent discovers that using the side thrusters keeps the vehicle upright ($\theta \approx 0$) and that firing the main engine slows down its vertical fall. As a result, the landing success rate jumps rapidly from $0\%$ to $86.7\%$, and the average reward surges from $-78.38$ up to $+194.27$.
+    \item \textbf{Fine-Tuning and Propellant Optimization (100k to 300k steps):} Beyond 100k steps, the agent consistently achieves rewards above the environment solved threshold of $+200$. In this phase, the agent fine-tunes its throttle commands to touch down softly on both legs while minimizing unnecessary fuel burn. The policy reaches a peak reward of $+224.14 \pm 32.81$ with a $100\%$ landing success rate, conserving approximately $54.1\%$ of its initial fuel reserve at touchdown.
 \end{enumerate}
 
-\subsection{Variance Reduction and Learning Stability}
-In continuous robotic RL, policy stability is quantified through the reduction of return variance across evaluation runs \cite{schulman2017proximal}. As depicted by the shaded $\pm 1\sigma$ confidence band in \Cref{fig:nominal_learning_curve}, the standard deviation of returns contracts from an initial peak dispersion of $\sigma = 161.40$ (during the breakthrough phase at 70k steps) down to $\sigma = 17.98$ at 150k steps. This marked variance shrinkage confirms that the PPO trust-region clipping mechanism successfully prevents catastrophic policy collapse while converging toward a deterministic, highly repeatable control law.
+\subsection{Learning Stability and Variance Reduction}
+The shaded region in \Cref{fig:nominal_learning_curve} represents the $\pm 1\sigma$ standard deviation across evaluation episodes. During the breakthrough phase (at 70k steps), the variance is large ($\sigma = 161.40$) because the agent is still transitioning between failed crashes and occasional successful landings. As training progresses to 150k steps and beyond, the standard deviation shrinks down to $\sigma = 17.98$. This tightening of the confidence band confirms that the PPO controller converges to a stable, highly consistent landing strategy.

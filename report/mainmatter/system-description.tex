@@ -1,70 +1,44 @@
 \section{System Description and Physical Modeling}
 \label{sec:system_description}
 
-\subsection{Coordinate Frames of Reference}
-To establish an unambiguous kinematic and dynamic representation of the powered descent vehicle, two Cartesian coordinate frames are defined in accordance with standard aerospace flight mechanics conventions:
-\begin{enumerate}[leftmargin=*,label=\textbf{\arabic*.}]
-    \item \textbf{Inertial Landing Frame} $\mathcal{F}_I = \{O_I, \vec{x}_I, \vec{y}_I\}$: An earth/lunar-fixed frame where the origin $O_I$ is anchored at the midpoint of the designated landing helipad. The unit vector $\vec{x}_I$ extends horizontally parallel to the ground plane, and $\vec{y}_I$ extends vertically upward, collinear with the local gravity vector opposite to lunar gravitation.
-    \item \textbf{Body-Fixed Frame} $\mathcal{F}_B = \{O_B, \vec{x}_B, \vec{y}_B\}$: A vehicle-fixed reference frame centered at the instantaneous center of mass $O_B$. The longitudinal axis $\vec{y}_B$ aligns with the vertical centerline of the lander fuselage along the thrust vector of the main engine, while the lateral axis $\vec{x}_B$ points toward the starboard landing gear.
-\end{enumerate}
-
-The vehicle attitude is parameterized by the planar pitch orientation angle $\theta(t) \in [-\pi, \pi]$, defined as the right-handed rotation angle between the inertial vertical $\vec{y}_I$ and the body longitudinal axis $\vec{y}_B$. An orientation of $\theta = 0$ corresponds to a nominal upright flight condition, with counter-clockwise angular displacement designated as positive.
-
-\subsection{Planar Non-Linear Flight Dynamics}
-The lunar lander is modeled as a 3-Degree-of-Freedom (3-DOF) planar rigid body subject to non-linear gravitational, thrust, aerodynamic disturbance, and contact forces. The governing continuous-time translational and rotational equations of motion expressed in the inertial frame are formulated as:
-\begin{align}
-    \ddot{x}(t) &= \frac{-F_{\text{main}}(t)\sin\theta(t) - F_{\text{side}}(t)\cos\theta(t) + F_{\text{wind},x}(t)}{m(t)}, \label{eq:eom_x} \\
-    \ddot{y}(t) &= \frac{F_{\text{main}}(t)\cos\theta(t) - F_{\text{side}}(t)\sin\theta(t) + F_{\text{wind},y}(t)}{m(t)} - g, \label{eq:eom_y} \\
-    \ddot{\theta}(t) &= \frac{M_{\text{thrust}}(t) + M_{\text{turb}}(t)}{I_{zz}(t)}, \label{eq:eom_theta}
-\end{align}
-where $g = 10.0\,\si{m/s^2}$ denotes the scaled gravitational acceleration constant, $m(t)$ represents the instantaneous vehicle mass, and $I_{zz}(t)$ denotes the time-varying mass moment of inertia about the out-of-plane rotation axis. The thrust terms $F_{\text{main}}$ and $F_{\text{side}}$ are modulated by the autonomous controller, while $F_{\text{wind}}$ and $M_{\text{turb}}$ simulate stochastic aerodynamic disturbances parameterized through non-linear sinusoidal and tanh functions \cite{towers2023gymnasium}.
-
-\subsection{Dynamic Mass Variation and Fuel Depletion Model}
-Unlike standard benchmark environments that assume constant vehicle mass, realistic rocket-powered descent trajectories are governed by Tsiolkovsky mass depletion dynamics. As propellant is expelled through continuous throttle firings, the physical mass of the lander body continuously declines from its initial fully-fueled ("wet") condition to its empty ("dry") structural state.
-
-The vehicle is initialized with a total propellant capacity of $F_0 = 100.0\,\text{units}$. The instantaneous propellant volume $F(t)$ is governed by the mass flow rate differential equation:
-\begin{equation}
-    \dot{F}(t) = - \left( u_{\text{main}}(t) \cdot \dot{m}_{\text{main,max}} + |u_{\text{side}}(t)| \cdot \dot{m}_{\text{side,max}} \right), \quad F(0) = F_0,
-    \label{eq:fuel_depletion}
-\end{equation}
-where $\dot{m}_{\text{main,max}} = 0.40\,\text{units/step}$ ($20.0\,\text{units/s}$ at $50\,\si{Hz}$) and $\dot{m}_{\text{side,max}} = 0.05\,\text{units/step}$ ($2.5\,\text{units/s}$ at $50\,\si{Hz}$) represent the maximum mass consumption rates for the main engine and reaction control system (RCS) thrusters, respectively. 
-
-To simulate continuous mass and inertia tensor recalculation within the Box2D multi-body physics engine, the structural polygon density $\rho(t)$ is dynamically coupled to the normalized remaining fuel fraction $f(t) = F(t)/F_0 \in [0.0, 1.0]$:
-\begin{equation}
-    \rho(t) = \rho_{\text{dry}} + (\rho_0 - \rho_{\text{dry}}) \cdot f(t),
-    \label{eq:density_scaling}
-\end{equation}
-with wet density $\rho_0 = 5.0\,\si{kg/m^2}$ (total wet mass $m_{\text{wet}} \approx 4.82\,\si{kg}$) and dry density $\rho_{\text{dry}} = 2.5\,\si{kg/m^2}$ (dry mass $m_{\text{dry}} \approx 2.41\,\si{kg}$). At every discrete integration step $\Delta t = 1/50\,\si{s}$, the density of the polygonal body fixtures is refreshed and the rigid body inertia tensor is updated via \texttt{body.ResetMassData()}. Consequently, as propellant depletes, the control authority $\vec{F}/m(t)$ increases dynamically by a factor of $2.0$, requiring the learning agent to synthesize an adaptive policy robust to shifting plant transfer functions.
-
-\subsection{Actuator Mechanics and Landing Gear Multi-Body Constraints}
-The control interface operates over a 2-dimensional continuous vector $\mathbf{u} = [a_1, a_2]^T \in [-1.0, 1.0]^2$. The continuous actuator commands map non-linearly to physical engine throttles:
+\subsection{Environment and Coordinate Frames}
+The simulation is built on the 2D continuous Lunar Lander environment in Gymnasium \cite{towers2023gymnasium}, powered by the Box2D multi-body physics engine operating at $50\,\si{Hz}$. To describe the vehicle motion, two reference frames are defined:
 \begin{itemize}[leftmargin=*,label=$\bullet$]
-    \item \textbf{Main Engine ($a_1$):} Generates pure axial thrust along the positive $\vec{y}_B$ vector. To reflect realistic rocket engine minimum ignition thresholds, a non-linear activation envelope is enforced:
-    \begin{equation}
-        u_{\text{main}} = \begin{cases}
-            0, & \text{if } a_1 \le 0, \\
-            0.5 \cdot (a_1 + 1.0) \in [0.5, 1.0], & \text{if } a_1 > 0.
-        \end{cases}
-        \label{eq:main_actuator}
-    \end{equation}
-    The resulting thrust magnitude is $F_{\text{main}}(t) = u_{\text{main}}(t) \cdot T_{\text{main,max}}$, where $T_{\text{main,max}} = 13.0\,\si{N}$.
-    \item \textbf{Lateral Thrusters ($a_2$):} Provide directional differential torque for attitude stabilization and horizontal translation. A deadband region is established to avoid continuous jitter:
-    \begin{equation}
-        u_{\text{side}} = \begin{cases}
-            0, & \text{if } |a_2| \le 0.5, \\
-            \text{sign}(a_2) \cdot |a_2| \in [-1.0, -0.5] \cup [0.5, 1.0], & \text{if } |a_2| > 0.5.
-        \end{cases}
-        \label{eq:side_actuator}
-    \end{equation}
-    The RCS thruster provides a force of $F_{\text{side}}(t) = |u_{\text{side}}(t)| \cdot T_{\text{side,max}}$ with $T_{\text{side,max}} = 0.6\,\si{N}$, located at moment arms $h_{\text{side}} = 14/30\,\si{m}$ and $d_{\text{side}} = 12/30\,\si{m}$ relative to the vehicle center of mass.
+    \item \textbf{Inertial Frame} $\mathcal{F}_I$: Fixed to the lunar surface with its origin $(x=0, y=0)$ located at the center of the landing pad. The $x$-axis points horizontally to the right, and the $y$-axis points vertically upward opposite to gravity ($g = 10.0\,\si{m/s^2}$).
+    \item \textbf{Body Frame} $\mathcal{F}_B$: Fixed to the lander's center of mass, with its longitudinal axis aligned with the main engine thrust line. The attitude of the lander is defined by the pitch angle $\theta \in [-\pi, \pi]$, where $\theta = 0$ corresponds to an upright vehicle.
 \end{itemize}
 
-The landing gear assembly consists of two articulated cantilever legs connected via revolute joints to the fuselage. Each joint incorporates an active linear torsional spring ($\tau_{\text{spring}} = 40\,\si{N\cdot m}$) and angular mechanical limiters ($[-0.4, 0.9]\,\si{rad}$ starboard, $[-0.9, 0.4]\,\si{rad}$ port) to absorb touchdown impact energy. A high-frequency contact detector monitors ground collisions.
+\subsection{Dynamic Mass and Propellant Depletion Model}
+In standard benchmark environments, the lander's mass is kept constant throughout the episode. However, real rocket descent stages experience substantial mass loss due to propellant consumption. To incorporate this physical effect, a dynamic mass model was implemented:
+\begin{itemize}[leftmargin=*,label=$\bullet$]
+    \item The lander starts each episode with a maximum fuel capacity of $F_0 = 100.0\,\text{units}$.
+    \item Operating the main engine consumes up to $0.40\,\text{units}$ of fuel per frame, while the side thrusters consume up to $0.05\,\text{units}$ per frame.
+    \item As fuel is burned, the body density $\rho(t)$ decreases linearly from its initial wet density $\rho_0 = 5.0\,\si{kg/m^2}$ (total mass $\approx 4.82\,\si{kg}$) to its dry density $\rho_{\text{dry}} = 2.5\,\si{kg/m^2}$ (dry mass $\approx 2.41\,\si{kg}$):
+    \begin{equation}
+        \rho(t) = \rho_{\text{dry}} + (\rho_0 - \rho_{\text{dry}}) \cdot \frac{F(t)}{F_0}.
+        \label{eq:density_scaling}
+    \end{equation}
+\end{itemize}
+At every simulation step, the physics engine updates the vehicle mass and moment of inertia. As a consequence, the lander becomes $50\%$ lighter when empty, meaning that the same engine thrust produces twice the acceleration near the end of the descent.
 
-\subsection{Operational Envelope and Terminal Conditions}
-An episode terminates upon encountering one of three mutually exclusive operational boundary conditions:
-\begin{enumerate}[leftmargin=*,label=\textbf{\arabic*.}]
-    \item \textbf{Safe Touchdown (Success):} The lander comes to complete rest ($\|\mathbf{v}\| \le 0.05\,\si{m/s}$, $\omega \le 0.05\,\si{rad/s}$), the body orientation is upright ($|\theta| \le 0.1\,\si{rad}$), and both landing leg sensors maintain stable ground contact within the helipad boundary ($r_{\text{term}} = +100.0$).
-    \item \textbf{Catastrophic Crash (Failure):} The central fuselage contacts the terrain, the vehicle overturns ($|\theta| \ge \pi/2$), or the vehicle drifts beyond horizontal limits $|x| \ge 1.0$ ($r_{\text{term}} = -100.0$).
-    \item \textbf{Fuel Exhaustion (Failure):} Propellant drops to zero ($F(t) \le 0$) prior to securing a safe surface state, extinguishing all engine thrust and incurring an immediate catastrophic penalty ($r_{\text{term}} = -100.0$).
-\end{enumerate}
+\subsection{State Space, Action Space, and Reward Structure}
+\textbf{State Space:} The state observation is a 9-dimensional vector containing the lander's kinematic states, landing leg ground contacts, and the remaining fuel fraction:
+\begin{equation}
+    s = \left[ x,\, y,\, v_x,\, v_y,\, \theta,\, \omega,\, \text{left leg contact},\, \text{right leg contact},\, \frac{F(t)}{F_0} \right].
+    \label{eq:state_vector}
+\end{equation}
+All continuous quantities are normalized to roughly $[-1, 1]$ to facilitate neural network training.
+
+\textbf{Action Space:} The action space is continuous and consists of two control inputs $u = [u_1, u_2] \in [-1, 1]^2$:
+\begin{itemize}[leftmargin=*,label=$\bullet$]
+    \item \textbf{Main Engine ($u_1$):} If $u_1 \le 0$, the main engine is off. If $u_1 > 0$, the engine fires with a continuous throttle between $50\%$ and $100\%$ ($u_{\text{main}} = 0.5 + 0.5 u_1$), producing up to $13.0\,\si{N}$ of upward thrust.
+    \item \textbf{Side Thrusters ($u_2$):} If $|u_2| \le 0.5$, the side thrusters are off. If $|u_2| > 0.5$, the corresponding thruster fires with a directional throttle between $50\%$ and $100\%$ ($u_{\text{side}} = \text{sign}(u_2)|u_2|$), producing up to $0.6\,\si{N}$ to control attitude and horizontal translation.
+\end{itemize}
+
+\textbf{Reward Function:} The reward function is formulated to guide the lander smoothly to the pad:
+\begin{itemize}[leftmargin=*,label=$\bullet$]
+    \item \textbf{Shaping Rewards:} Positive rewards are given for moving closer to the center of the landing pad, decreasing speed, and maintaining an upright orientation ($|\theta| \approx 0$).
+    \item \textbf{Ground Contact:} $+10$ points for each leg in stable contact with the surface.
+    \item \textbf{Fuel and Thruster Penalties:} Small negative penalties are applied whenever engines fire ($-0.30$ for main, $-0.03$ for side) along with an additional penalty of $-0.50$ per unit of fuel consumed to incentivize fuel efficiency.
+    \item \textbf{Terminal Rewards:} $+100$ points for achieving a safe soft landing on both legs, and $-100$ points for crashing into the terrain, flying out of bounds, or depleting all fuel before landing. An episode scoring $\ge 200$ is considered successfully solved.
+\end{itemize}

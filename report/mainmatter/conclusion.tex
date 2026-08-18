@@ -1,15 +1,15 @@
-\section{Conclusion and Future Outlook}
+\section{Conclusion}
 \label{sec:conclusion}
 
-This investigation developed, trained, and evaluated an autonomous continuous reinforcement learning flight controller for a mass-varying lunar lander subject to dynamic propellant depletion and operational landing constraints. By integrating continuous Proximal Policy Optimization (PPO) with Generalized Advantage Estimation (GAE) and potential-based reward shaping, the controller successfully synthesized a highly robust, multi-phase guidance and attitude control law without requiring explicit prior dynamical models.
+In this project, a continuous reinforcement learning controller was successfully designed, trained, and evaluated for an autonomous Lunar Lander with dynamic mass variation and propellant consumption constraints. Using the Proximal Policy Optimization (PPO) algorithm with an Actor-Critic architecture, the agent learned to control both the main engine throttle and lateral attitude thrusters directly from continuous state observations.
 
-The primary conclusions derived from this research comprise:
-\begin{enumerate}[leftmargin=*,label=\textbf{\arabic*.}]
-    \item \textbf{Continuous Control Robustness to Mass Depletion:} The Actor-Critic architecture demonstrated deep adaptive capability, learning to smoothly modulate throttle commands to account for the $50\%$ reduction in vehicle mass and corresponding doubling of control authority during descent.
-    \item \textbf{Mathematical Necessity of Entropy Exploration:} The study substantiated that discrete exploration mechanisms ($\epsilon$-greedy) are fundamentally unsuited for continuous flight control. Entropy regularization proved essential to maintain stochastic exploration variance, preventing premature policy stagnation and accelerating convergence to $90{,}000$ steps.
-    \item \textbf{Planning Horizon Sensitivity:} Empirical sweeps proved that the discount factor is a decisive parameter in powered descent tasks: a myopic horizon ($\gamma = 0.95$) caused catastrophic fuel exhaustion and complete task failure, whereas far-sighted horizons ($\gamma \ge 0.99$) enabled optimal propellant conservation ($>53\%$).
-    \item \textbf{High-Precision Touchdown Performance:} In 50 Monte Carlo evaluation trials with stochastic disturbances, the closed-loop policy achieved a $98.0\%$ landing success rate, restricting lateral dispersion to $\pm 4.2\,\si{cm}$ and vertical impact velocity to $-0.12\,\si{m/s}$.
-\end{enumerate}
+The main conclusions and insights gained from this investigation are summarized as follows:
+\begin{itemize}[leftmargin=*,label=$\bullet$]
+    \item \textbf{Adaptation to Dynamic Mass Loss:} The trained controller learned to compensate for the continuous $50\%$ reduction in vehicle mass during flight. By progressively reducing its throttle command during the descent burn, the agent maintained smooth deceleration without over-shooting or bouncing.
+    \item \textbf{Exploration in Continuous Action Spaces:} The sensitivity analysis confirmed that traditional discrete exploration techniques (such as $\epsilon$-greedy) are unsuitable for continuous control tasks due to destabilizing chattering. Instead, tuning the entropy coefficient $c_{\text{ent}}$ ensured sufficient exploration of continuous throttle actions, speeding up convergence and avoiding suboptimal local policies.
+    \item \textbf{Critical Role of the Planning Horizon:} The discount factor $\gamma$ proved to be the most sensitive hyperparameter. A short horizon ($\gamma = 0.95$) caused complete failure because the agent could not anticipate the delayed landing reward and burned all its propellant prematurely. In contrast, higher discount factors ($\gamma \ge 0.99$) allowed the agent to discover fuel-efficient trajectories, retaining over $53\%$ of propellant at touchdown.
+    \item \textbf{Reliable Landing Performance:} In 50 Monte Carlo evaluation flights with randomized disturbances, the closed-loop controller achieved a $98.0\%$ landing success rate, soft touchdown velocities of $-0.12\,\si{m/s}$, and high lateral precision within $\pm 4.2\,\si{cm}$.
+\end{itemize}
 
-Future research should focus on domain randomization over uncertain terrain topographies and actuator latency, as well as exploring online neuro-adaptive architectures (such as Action-Dependent Heuristic Dynamic Programming) for in-flight recovery from severe thruster failures.
+For future work, several extensions could further improve the realism of the system. First, expanding the simulation to 3D flight dynamics would introduce coupled yaw, pitch, and roll motions. Second, introducing domain randomization (such as variable lunar gravity, surface slopes, and thruster lag) would test the agent's robustness under model uncertainties. Finally, exploring online adaptive critic designs could allow the controller to recover in real time from unexpected engine failures during descent.
 
