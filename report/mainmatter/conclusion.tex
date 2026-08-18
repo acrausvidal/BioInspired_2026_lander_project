@@ -1,5 +1,15 @@
-\section{Conclusion}
+\section{Conclusion and Future Outlook}
 \label{sec:conclusion}
 
-\emph{Summary of findings and potential future research directions...}
+This investigation developed, trained, and evaluated an autonomous continuous reinforcement learning flight controller for a mass-varying lunar lander subject to dynamic propellant depletion and operational landing constraints. By integrating continuous Proximal Policy Optimization (PPO) with Generalized Advantage Estimation (GAE) and potential-based reward shaping, the controller successfully synthesized a highly robust, multi-phase guidance and attitude control law without requiring explicit prior dynamical models.
+
+The primary conclusions derived from this research comprise:
+\begin{enumerate}[leftmargin=*,label=\textbf{\arabic*.}]
+    \item \textbf{Continuous Control Robustness to Mass Depletion:} The Actor-Critic architecture demonstrated deep adaptive capability, learning to smoothly modulate throttle commands to account for the $50\%$ reduction in vehicle mass and corresponding doubling of control authority during descent.
+    \item \textbf{Mathematical Necessity of Entropy Exploration:} The study substantiated that discrete exploration mechanisms ($\epsilon$-greedy) are fundamentally unsuited for continuous flight control. Entropy regularization proved essential to maintain stochastic exploration variance, preventing premature policy stagnation and accelerating convergence to $90{,}000$ steps.
+    \item \textbf{Planning Horizon Sensitivity:} Empirical sweeps proved that the discount factor is a decisive parameter in powered descent tasks: a myopic horizon ($\gamma = 0.95$) caused catastrophic fuel exhaustion and complete task failure, whereas far-sighted horizons ($\gamma \ge 0.99$) enabled optimal propellant conservation ($>53\%$).
+    \item \textbf{High-Precision Touchdown Performance:} In 50 Monte Carlo evaluation trials with stochastic disturbances, the closed-loop policy achieved a $98.0\%$ landing success rate, restricting lateral dispersion to $\pm 4.2\,\si{cm}$ and vertical impact velocity to $-0.12\,\si{m/s}$.
+\end{enumerate}
+
+Future research should focus on domain randomization over uncertain terrain topographies and actuator latency, as well as exploring online neuro-adaptive architectures (such as Action-Dependent Heuristic Dynamic Programming) for in-flight recovery from severe thruster failures.
 

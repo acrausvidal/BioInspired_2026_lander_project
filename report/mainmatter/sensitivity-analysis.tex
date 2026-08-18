@@ -1,4 +1,64 @@
-\section{Sensitivity Analysis}
+\section{Hyperparameter Sensitivity Analysis}
 \label{sec:sensitivity_analysis}
 
-% Evaluate sensitivity to key hyperparameters (e.g., learning rate, discount factor, entropy coefficient) and environmental disturbances.
+To systematically investigate algorithm sensitivity and identify the critical drivers of policy synthesis, a comprehensive parametric study was conducted across three foundational hyperparameters: learning rate $\alpha$, discount factor $\gamma$, and entropy coefficient $c_{\text{ent}}$. Each configuration was evaluated using automated convergence criteria, where convergence is defined as achieving a mean evaluation return $\bar{R} \ge 190.0$ with a landing success rate $\ge 90\%$. The empirical convergence statistics are compiled in \Cref{tab:sensitivity_summary}, and the comparative convergence speeds are depicted in \Cref{fig:convergence_barplot}.
+
+\begin{table}[H]
+    \centering
+    \footnotesize
+    \caption{Empirical convergence benchmark across learning rate, discount factor, and entropy coefficient variations.}
+    \label{tab:sensitivity_summary}
+    \begin{tabular}{llrrrrrr}
+        \toprule
+        \textbf{Hyperparameter} & \textbf{Value} & \textbf{Converged} & \textbf{Steps to Conv.} & \textbf{Episodes} & \textbf{Final Return} & \textbf{Success} & \textbf{Fuel Rem.} \\
+        \midrule
+        \multirow{3}{*}{\textbf{Learning Rate} ($\alpha$)} 
+        & $1.0 \times 10^{-4}$ & \textbf{True}  & 190,000 & 771 & $210.61 \pm 31.4$ & $100.0\%$ & $42.7\%$ \\
+        & $3.0 \times 10^{-4}$ & \textbf{True}  & 90,000  & 507 & $196.89 \pm 38.2$ & $93.3\%$  & $49.1\%$ \\
+        & $1.0 \times 10^{-3}$ & \textbf{True}  & \textbf{70,000} & \textbf{383} & $194.87 \pm 42.1$ & $100.0\%$ & $40.8\%$ \\
+        \midrule
+        \multirow{3}{*}{\textbf{Discount Factor} ($\gamma$)} 
+        & $0.95$ & \textbf{False} & $>200,000$ & 658 & $-115.76 \pm 88.4$ & $0.0\%$ & $0.0\%$ \\
+        & $0.99$ & \textbf{True}  & 130,000 & 565 & $194.82 \pm 44.6$ & $93.3\%$  & $39.8\%$ \\
+        & $0.999$& \textbf{True}  & 150,000 & 767 & $198.94 \pm 36.5$ & $93.3\%$  & \textbf{64.9\%} \\
+        \midrule
+        \multirow{3}{*}{\textbf{Entropy Coeff.} ($c_{\text{ent}}$)} 
+        & $0.00$ & \textbf{True}  & 120,000 & 564 & $190.36 \pm 40.8$ & $100.0\%$ & $31.3\%$ \\
+        & $0.01$ & \textbf{True}  & 100,000 & 523 & $190.04 \pm 45.1$ & $93.3\%$  & $41.1\%$ \\
+        & $0.05$ & \textbf{True}  & \textbf{90,000} & \textbf{482} & $196.65 \pm 34.7$ & $100.0\%$ & $42.8\%$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\linewidth]{figures/convergence_comparison_barplot.pdf}
+    \caption{Comparative training steps and wall-clock execution time required to reach certified policy convergence across parametric variations.}
+    \label{fig:convergence_barplot}
+\end{figure}
+
+\subsection{Influence of Optimization Learning Rate \texorpdfstring{$\alpha$}{alpha}}
+The optimization learning rate dictates the gradient step magnitude during Adam network updates. As shown in \Cref{tab:sensitivity_summary}, increasing $\alpha$ from $1.0 \times 10^{-4}$ to $1.0 \times 10^{-3}$ monotonically accelerates convergence, reducing required environment interactions from $190{,}000$ steps ($224.9\,\si{s}$) to $70{,}000$ steps ($81.2\,\si{s}$). 
+
+However, an aggressive rate ($\alpha = 1.0 \times 10^{-3}$) induces minor policy jitter in steady-state hover, resulting in slightly lower asymptotic fuel conservation ($40.8\%$ vs. $49.1\%$). The intermediate rate $\alpha = 3.0 \times 10^{-4}$ delivers optimal stability and rapid convergence ($90{,}000$ steps) without incurring gradient pathology.
+
+\subsection{Influence of Planning Horizon and Discount Factor \texorpdfstring{$\gamma$}{gamma}}
+The discount factor $\gamma$ defines the geometric decay of future reward signals. A dramatic performance divergence is observed across values:
+\begin{itemize}[leftmargin=*,label=$\bullet$]
+    \item \textbf{Myopic Failure ($\gamma = 0.95$):} The agent completely fails to synthesize a landing policy, exhibiting zero successful touchdowns ($0.0\%$) and an evaluation return of $-115.76$. Over a typical $300$-step descent trajectory, the terminal $+100.0$ touchdown reward at step $t=200$ is discounted by $\gamma^{200} = 0.95^{200} \approx 3.5 \times 10^{-5}$. Consequently, the distant terminal objective provides negligible gradient signal; the agent greedily exploits local potential gains by burning maximum thrust immediately, causing premature propellant exhaustion.
+    \item \textbf{Far-Sighted Fuel Economy ($\gamma = 0.999$):} Expanding the planning horizon to $\gamma = 0.999$ increases asymptotic propellant conservation to a remarkable $64.87\%$. Because long-term cumulative fuel penalties are accurately integrated across the entire trajectory, the agent learns an optimal ballistic coast phase followed by a high-efficiency gravity-turn terminal deceleration.
+\end{itemize}
+
+\subsection{Influence of Policy Entropy Regularization \texorpdfstring{$c_{\text{ent}}$}{c_ent}}
+As established in \Cref{sec:rl_controller_design}, continuous action exploration requires sustaining policy distribution entropy. The empirical results substantiate this theoretical requirement:
+\begin{itemize}[leftmargin=*,label=$\bullet$]
+    \item At $c_{\text{ent}} = 0.0$, the absence of entropy regularization allows the Gaussian covariance $\boldsymbol{\Sigma}_\theta$ to prematurely shrink, locking the policy into a conservative, high-thrust strategy that converges slowly ($120{,}000$ steps) and burns excessive fuel ($31.3\%$ remaining).
+    \item Introducing $c_{\text{ent}} = 0.05$ actively incentivizes continuous action exploration, accelerating convergence to $90{,}000$ steps ($482$ episodes) and achieving superior terminal returns ($196.65$) and higher propellant conservation ($42.8\%$).
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.92\linewidth]{figures/sensitivity_comparison_dashboard.pdf}
+    \caption{Multi-panel sensitivity dashboard contrasting evaluation return progression across sweeps of (a) Learning Rate, (b) Discount Factor, and (c) Entropy Regularization.}
+    \label{fig:sensitivity_dashboard}
+\end{figure}

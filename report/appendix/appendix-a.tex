@@ -1,31 +1,55 @@
-\section{Source Code Example}
-%\label{chapter:title}
+\section{Schematic Algorithmic Workflow}
+\label{app:algorithmic_workflow}
 
-\emph{Adding source code to your report/thesis is supported with the package {\normalfont\texttt{listings}}. An example can be found below. Files can be added using {\normalfont\texttt{\textbackslash lstinputlisting[language=<language>]\{<filename>\}}}.}
+The operational and learning workflow of the continuous Actor-Critic PPO architecture integrated with the time-varying multi-body flight simulation is formalized in the schematic algorithm below:
 
-\begin{lstlisting}[language=Python]
-"""
-ISA Calculator: import the function, specify the height and it will return a
-list in the following format: [Temperature,Density,Pressure,Speed of Sound].
-Note that there is no check to see if the maximum altitude is reached.
-"""
-
-import math
-g0 = 9.80665
-R = 287.0
-layer1 = [0, 288.15, 101325.0]
-alt = [0,11000,20000,32000,47000,51000,71000,86000]
-a = [-.0065,0,.0010,.0028,0,-.0028,-.0020]
-
-def atmosphere(h):
-    for i in range(0,len(alt)-1):
-        if h >= alt[i]:
-            layer0 = layer1[:]
-            layer1[0] = min(h,alt[i+1])
-            if a[i] != 0:
-                layer1[1] = layer0[1] + a[i]*(layer1[0]-layer0[0])
-                layer1[2] = layer0[2] * (layer1[1]/layer0[1])**(-g0/(a[i]*R))
-            else:
-                layer1[2] = layer0[2]*math.exp((-g0/(R*layer1[1]))*(layer1[0]-layer0[0]))
-    return [layer1[1],layer1[2]/(R*layer1[1]),layer1[2],math.sqrt(1.4*R*layer1[1])]
-\end{lstlisting}
+\vspace{0.5em}
+\noindent\fbox{%
+\parbox{\textwidth}{%
+\textbf{Algorithm A.1: Continuous PPO for Mass-Varying Lunar Landing}
+\vspace{0.3em}\hrule\vspace{0.5em}
+\begin{enumerate}[leftmargin=1.8em,itemsep=2pt]
+    \item \textbf{Initialization:}
+    \begin{itemize}[leftmargin=1.2em,itemsep=1pt]
+        \item Initialize Actor network $\pi_\theta(\mathbf{a} \mid \mathbf{s})$ with weights $\theta$ and trainable log-std $\log\boldsymbol{\sigma}$.
+        \item Initialize Critic network $V_\phi(\mathbf{s})$ with weights $\phi$.
+        \item Configure environment parameters: initial fuel $F_0 = 100.0$, wet density $\rho_0 = 5.0$, dry density $\rho_{\text{dry}} = 2.5$.
+    \end{itemize}
+    \item \textbf{Outer Training Loop (over iterations $k = 1, 2, \dots, K$):}
+    \begin{enumerate}[label=\textbf{\arabic{enumi}.\arabic*.},leftmargin=1.5em,itemsep=2pt]
+        \item \textbf{Parallel Trajectory Collection:}
+        \begin{itemize}[leftmargin=1.2em,itemsep=1pt]
+            \item For each parallel environment $e \in \{1, \dots, N_{\text{envs}}\}$:
+            \item Sample continuous action $\mathbf{a}_t \sim \pi_\theta(\cdot \mid \mathbf{s}_t) = \mathcal{N}(\boldsymbol{\mu}_\theta(\mathbf{s}_t), \boldsymbol{\Sigma}_\theta)$.
+            \item Apply continuous throttle mapping ($u_{\text{main}}, u_{\text{side}}$) via \Cref{eq:main_actuator,eq:side_actuator}.
+            \item Compute propellant burn $\Delta F_t$ and update remaining fuel $F(t+1) = F(t) - \Delta F_t$.
+            \item Update physical body density $\rho(t+1) = \rho_{\text{dry}} + (\rho_0 - \rho_{\text{dry}})\frac{F(t+1)}{F_0}$.
+            \item Trigger \texttt{body.ResetMassData()} to refresh mass $m(t+1)$ and inertia $I_{zz}(t+1)$.
+            \item Advance Box2D multi-body integrator by $\Delta t = 1/50\,\si{s}$.
+            \item Receive observation $\mathbf{s}_{t+1}$ and compute shaped reward $r_t$ via \Cref{eq:full_reward}.
+            \item Store transition tuple $(\mathbf{s}_t, \mathbf{a}_t, r_t, \mathbf{s}_{t+1}, \log \pi_{\theta_{\text{old}}}(\mathbf{a}_t \mid \mathbf{s}_t), V_\phi(\mathbf{s}_t))$.
+        \end{itemize}
+        \item \textbf{Advantage Estimation:}
+        \begin{itemize}[leftmargin=1.2em,itemsep=1pt]
+            \item Compute Temporal Difference residuals: $\delta_t^V = r_t + \gamma V_\phi(\mathbf{s}_{t+1}) - V_\phi(\mathbf{s}_t)$.
+            \item Compute GAE advantage estimates: $\hat{A}_t = \sum_{l=0}^{T-t-1} (\gamma \lambda)^l \delta_{t+l}^V$.
+            \item Compute empirical return targets: $R_t = \hat{A}_t + V_\phi(\mathbf{s}_t)$.
+            \item Normalize advantage values across rollout batch: $\hat{A}_t \leftarrow (\hat{A}_t - \mu_{\hat{A}}) / (\sigma_{\hat{A}} + 10^{-8})$.
+        \end{itemize}
+        \item \textbf{Surrogate Policy and Value Function Optimization:}
+        \begin{itemize}[leftmargin=1.2em,itemsep=1pt]
+            \item For each epoch $e \in \{1, \dots, N_{\text{epochs}}\}$:
+            \item Subdivide rollout buffer into mini-batches of size $B = 64$.
+            \item Compute probability ratios: $r_t(\theta) = \frac{\pi_\theta(\mathbf{a}_t \mid \mathbf{s}_t)}{\pi_{\theta_{\text{old}}}(\mathbf{a}_t \mid \mathbf{s}_t)}$.
+            \item Evaluate clipped surrogate loss $L^{\text{CLIP}}(\theta)$ via \Cref{eq:ppo_clip}.
+            \item Evaluate Critic mean squared error loss $L^{\text{VF}}(\phi) = (V_\phi(\mathbf{s}_t) - R_t)^2$.
+            \item Evaluate differential entropy bonus $\mathcal{H}(\pi_\theta(\cdot \mid \mathbf{s}_t))$ via \Cref{eq:differential_entropy}.
+            \item Update $\theta, \phi$ simultaneously via Adam optimizer:
+            $$\theta, \phi \leftarrow \text{Adam}\left( -\nabla_{\theta,\phi} \left[ L^{\text{CLIP}}(\theta) - c_v L^{\text{VF}}(\phi) + c_{\text{ent}} \mathcal{H}(\pi_\theta) \right], \alpha \right).$$
+        \end{itemize}
+    \end{enumerate}
+    \item \textbf{Output:} Converged optimal closed-loop control policy $\pi_{\theta^*}$.
+\end{enumerate}
+}%
+}
+\vspace{0.5em}

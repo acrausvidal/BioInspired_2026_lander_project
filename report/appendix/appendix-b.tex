@@ -1,27 +1,52 @@
-\section{Task Division Example}
-%\label{chapter:title}
+\section{Hyperparameter and Simulation Specifications}
+\label{app:hyperparameters}
 
-\emph{If a task division is required, a simple template can be found below for convenience. Feel free to use, adapt or completely remove.}
+The exact hyperparameter configuration, network architectural dimensions, and physical simulation constants utilized in the nominal training and sensitivity experiments are cataloged in \Cref{tab:hyperparameters}.
 
-\begin{table}[htb]
-    \setlength\extrarowheight{4pt}
+\begin{table}[H]
     \centering
-    \caption{Distribution of the workload}
-    \label{tab:taskdivision}
-    \begin{tabularx}{\textwidth}{lXX}
+    \footnotesize
+    \caption{Complete hyperparameter and physical simulation parameter specifications.}
+    \label{tab:hyperparameters}
+    \begin{tabularx}{\textwidth}{lXr}
         \toprule
-        & Task & Student Name(s) \\
+        \textbf{Module} & \textbf{Parameter Description} & \textbf{Nominal Value} \\
         \midrule
-        & Summary & \\
-        Chapter 1 & Introduction &  \\
-        Chapter 2 &  & \\
-        Chapter 3 &  & \\
-        Chapter * &  & \\
-        Chapter * & Conclusion &  \\
+        \multirow{8}{*}{\textbf{PPO Algorithm}} 
+        & Total Training Timesteps & $300{,}000$ \\
+        & Rollout Buffer Horizon ($n_{\text{steps}}$) & $2{,}048$ \\
+        & Optimization Mini-Batch Size ($B$) & $64$ \\
+        & Number of Optimization Epochs per Rollout ($N_{\text{epochs}}$) & $10$ \\
+        & Learning Rate ($\alpha$, Adam Optimizer) & $3.0 \times 10^{-4}$ \\
+        & Discount Factor ($\gamma$) & $0.99$ \\
+        & GAE Parameter ($\lambda$) & $0.95$ \\
+        & Policy Surrogate Clipping Range ($\epsilon_{\text{clip}}$) & $0.20$ \\
+        & Value Loss Coefficient ($c_v$) & $0.50$ \\
+        & Entropy Regularization Bonus Coefficient ($c_{\text{ent}}$) & $0.01$ \\
+        & Maximum Gradient Clipping Norm & $0.50$ \\
         \midrule
-        & Editors & \\
-        & CAD and Figures & \\
-        & Document Design and Layout & \\
+        \multirow{4}{*}{\textbf{Neural Networks}} 
+        & Actor Network Architecture ($\pi_\theta$) & $\text{Input}(9) \to \text{FC}(128) \to \text{FC}(128) \to \text{Out}(2)$ \\
+        & Critic Network Architecture ($V_\phi$) & $\text{Input}(9) \to \text{FC}(128) \to \text{FC}(128) \to \text{Out}(1)$ \\
+        & Activation Functions & Hyperbolic Tangent ($\tanh$) \\
+        & Action Distribution Type & Diagonal Gaussian $\mathcal{N}(\boldsymbol{\mu}_\theta, \boldsymbol{\Sigma}_\theta)$ \\
+        \midrule
+        \multirow{8}{*}{\textbf{Physics \& Lander}} 
+        & Simulation Frame Rate ($f_{\text{fps}}$) & $50\,\si{Hz}$ ($\Delta t = 0.02\,\si{s}$) \\
+        & Gravitational Acceleration ($g$) & $10.0\,\si{m/s^2}$ \\
+        & Initial Propellant Capacity ($F_0$) & $100.0\,\text{units}$ \\
+        & Initial Wet Polygon Density ($\rho_0$) & $5.0\,\si{kg/m^2}$ ($m_{\text{wet}} \approx 4.82\,\si{kg}$) \\
+        & Dry Polygon Density ($\rho_{\text{dry}}$) & $2.5\,\si{kg/m^2}$ ($m_{\text{dry}} \approx 2.41\,\si{kg}$) \\
+        & Main Engine Maximum Power ($T_{\text{main,max}}$) & $13.0\,\si{N}$ \\
+        & RCS Thruster Maximum Power ($T_{\text{side,max}}$) & $0.6\,\si{N}$ \\
+        & Main Engine Fuel Burn Rate ($\dot{m}_{\text{main}}$) & $0.40\,\text{units/frame}$ \\
+        & Side Thruster Fuel Burn Rate ($\dot{m}_{\text{side}}$) & $0.05\,\text{units/frame}$ \\
+        & Propellant Penalty Multiplier ($c_{\text{fuel}}$) & $0.50$ \\
+        \midrule
+        \multirow{3}{*}{\textbf{Training Setup}} 
+        & Number of Parallel Vector Environments ($N_{\text{envs}}$) & $4$ \\
+        & Deterministic Evaluation Frequency & Every $10{,}000$ steps \\
+        & Evaluation Episodes per Benchmark ($N_{\text{eval}}$) & $15$ \\
         \bottomrule
     \end{tabularx}
 \end{table}

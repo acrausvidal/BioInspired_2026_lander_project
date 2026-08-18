@@ -1,29 +1,69 @@
-% \section*{Nomenclature}
-% %\addcontentsline{toc}{section}{Nomenclature}
-
-% \emph{If a nomenclature is required, a simple template can be found below for convenience. Feel free to use, adapt or completely remove.}
-
 \section*{Abbreviations}
 
-\begin{longtable}{p{2.5cm}p{8cm}}
+\begin{longtable}{p{2.5cm}p{10cm}}
     \toprule
-    Abbreviation & Definition                        \\
-    \midrule\endhead % Add abbreviations alphabetically here:
-    ISA          & International Standard Atmosphere \\
-    ...                                              \\
+    Abbreviation & Definition \\
+    \midrule\endhead
+    ACD          & Adaptive Critic Design \\
+    ANN          & Artificial Neural Network \\
+    DOF          & Degree of Freedom \\
+    DP           & Dynamic Programming \\
+    GAE          & Generalized Advantage Estimation \\
+    KL           & Kullback-Leibler \\
+    MC           & Monte Carlo \\
+    MDP          & Markov Decision Process \\
+    MLP          & Multi-Layer Perceptron \\
+    PPO          & Proximal Policy Optimization \\
+    RL           & Reinforcement Learning \\
+    RMS          & Root Mean Square \\
+    SAC          & Soft Actor-Critic \\
+    TD           & Temporal Difference \\
+    TRPO         & Trust Region Policy Optimization \\
     \bottomrule
 \end{longtable}
 
 \section*{Symbols}
 
-\begin{longtable}{p{2.5cm}p{8cm}p{2.5cm}}
+\begin{longtable}{p{2.5cm}p{9.5cm}p{2.0cm}}
     \toprule
-    Symbol & Definition & Unit       \\
-    \midrule\endhead % Add Latin symbols alphabetically here:
-    $V$    & Velocity   & [m/s]      \\
-    ...                              \\
-    \midrule % Add Greek symbols alphabetically here:
-    $\rho$ & Density    & [kg/m$^3$] \\
-    ...                              \\
+    Symbol & Definition & Unit \\
+    \midrule\endhead
+    $a_t, \mathbf{u}_t$ & Control action vector at step $t$ & [-] \\
+    $\hat{A}_t$         & Advantage function estimate & [-] \\
+    $c_{\text{ent}}$    & Policy entropy bonus coefficient & [-] \\
+    $c_v$               & Value function loss weighting coefficient & [-] \\
+    $f(t)$              & Normalized propellant fraction ($F(t)/F_0$) & [-] \\
+    $F(t)$              & Instantaneous propellant mass & [kg] \\
+    $F_0$               & Initial total propellant capacity & [kg] \\
+    $g$                 & Lunar gravitational acceleration ($1.62\,\text{m/s}^2$ scaled to $10.0$) & [$\text{m/s}^2$] \\
+    $I_{zz}(t)$         & Planar moment of inertia about center of mass & [$\text{kg}\cdot\text{m}^2$] \\
+    $m(t)$              & Instantaneous vehicle total mass & [kg] \\
+    $\dot{m}$           & Propellant mass consumption rate & [kg/s] \\
+    $Q^\pi(s, a)$       & Action-value function under policy $\pi$ & [-] \\
+    $r_t$               & Immediate scalar reward at timestep $t$ & [-] \\
+    $R_t$               & Discounted cumulative return & [-] \\
+    $s_t, \mathbf{x}_t$ & Environmental state vector at timestep $t$ & [-] \\
+    $t$                 & Discrete environment timestep or continuous time & [s] \\
+    $u_{\text{main}}$   & Main engine throttle command ($[0.5, 1.0]$) & [-] \\
+    $u_{\text{side}}$   & Lateral thruster throttle command ($[-1.0, 1.0]$) & [-] \\
+    $v_x, v_y$          & Horizontal and vertical linear velocities & [m/s] \\
+    $V^\pi(s)$          & State-value function under policy $\pi$ & [-] \\
+    $x, y$              & Planar position coordinates relative to landing pad & [m] \\
+    \midrule
+    $\alpha$            & Neural network optimization learning rate & [-] \\
+    $\gamma$            & Future reward discount factor & [-] \\
+    $\delta_t$          & Temporal Difference (TD) residual error & [-] \\
+    $\epsilon_{\text{clip}}$ & PPO surrogate objective clipping threshold & [-] \\
+    $\theta$            & Pitch/attitude orientation angle or Actor weights & [rad] / [-] \\
+    $\lambda$           & GAE exponential variance-bias trade-off parameter & [-] \\
+    $\mu_\theta(s)$     & Mean of Gaussian policy action distribution & [-] \\
+    $\pi_\theta(a|s)$   & Parameterized stochastic control policy & [-] \\
+    $\rho(t)$           & Instantaneous structural body density & [$\text{kg/m}^2$] \\
+    $\rho_0$            & Initial wet body density ($5.0$) & [$\text{kg/m}^2$] \\
+    $\rho_{\text{dry}}$ & Dry body density at fuel exhaustion ($2.5$) & [$\text{kg/m}^2$] \\
+    $\sigma_\theta(s)$  & Standard deviation of Gaussian policy distribution & [-] \\
+    $\phi$              & Value function (Critic) neural network weights & [-] \\
+    $\Phi(s)$           & Potential function for potential-based reward shaping & [-] \\
+    $\omega$            & Pitch angular velocity ($\dot{\theta}$) & [rad/s] \\
     \bottomrule
 \end{longtable}

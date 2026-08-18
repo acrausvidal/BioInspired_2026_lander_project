@@ -1,4 +1,22 @@
-\section{Learning Effect}
+\section{The Learning Effect and Training Convergence}
 \label{sec:learning_effect}
 
-% Analyze the progression of learning across training iterations, reward convergence, and policy adaptation over time.
+\subsection{Empirical Convergence Analysis}
+To substantiate the learning effect and demonstrate asymptotic convergence, the nominal PPO controller was trained over $300{,}000$ global interaction steps across four parallelized vector environments. Policy evaluation was executed deterministically every $10{,}000$ global steps over $N=15$ evaluation episodes. The quantitative trajectory of learning metrics is illustrated in \Cref{fig:nominal_learning_curve}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/nominal_learning_curve.pdf}
+    \caption{Nominal training convergence of the PPO agent on the mass-varying Lunar Lander over 300k timesteps, showing mean evaluation return with $\pm 1\sigma$ confidence interval (top), landing success percentage (bottom-left), and propellant conserved at touchdown (bottom-right).}
+    \label{fig:nominal_learning_curve}
+\end{figure}
+
+The training trajectory exhibits three well-defined developmental regimes reflecting the progressive acquisition of flight control intelligence:
+\begin{enumerate}[leftmargin=*,label=\textbf{\arabic*.}]
+    \item \textbf{Exploratory Chaos and Structural Collapse (0--50k steps):} During the initial interaction phase, the stochastic Gaussian policy samples wide variance actions. The agent lacks control authority over the unstable underactuated rotational mode, resulting in severe attitude departures ($|\theta| > 1.0\,\si{rad}$), premature propellant exhaustion, and a $100\%$ crash rate. Evaluation returns remain deeply negative, plunging to a minimum of $-250.93 \pm 82.26$ at 40k steps.
+    \item \textbf{Policy Breakthrough and Attitude Acquisition (50k--100k steps):} A rapid behavioral bifurcation occurs between 60k and 90k steps. Guided by the shaped potential field gradients, the Critic network resolves accurate value approximations, enabling the Actor to discover vertical attitude stabilization and counter-gravitational deceleration. The landing success rate undergoes a steep surge from $13.3\%$ at 60k steps to $86.7\%$ at 90k steps, while the mean evaluation return accelerates from $-78.38 \pm 120.71$ to $+194.27 \pm 123.92$.
+    \item \textbf{Asymptotic Refinement and Propellant Optimization (100k--300k steps):} Beyond 100k steps, the agent consistently exceeds the established environment solved criterion of $\bar{R} \ge 200.0$. The policy transitions from raw survival to precise kinetic energy management and fuel throttling. Peak mean return reaches $+224.14 \pm 32.81$ at 180k steps with a flawless $100\%$ safe landing rate. Simultaneously, the mean propellant conserved at touchdown stabilizes at $54.11 \pm 4.2\,\si{units}$ ($54.1\%$ fuel reserve), confirming that the agent learned an energy-efficient terminal descent throttle profile.
+\end{enumerate}
+
+\subsection{Variance Reduction and Learning Stability}
+In continuous robotic RL, policy stability is quantified through the reduction of return variance across evaluation runs \cite{schulman2017proximal}. As depicted by the shaded $\pm 1\sigma$ confidence band in \Cref{fig:nominal_learning_curve}, the standard deviation of returns contracts from an initial peak dispersion of $\sigma = 161.40$ (during the breakthrough phase at 70k steps) down to $\sigma = 17.98$ at 150k steps. This marked variance shrinkage confirms that the PPO trust-region clipping mechanism successfully prevents catastrophic policy collapse while converging toward a deterministic, highly repeatable control law.
