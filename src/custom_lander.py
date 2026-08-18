@@ -657,12 +657,15 @@ class CustomLunarLanderContinuous(gym.Env, EzPickle):
                         (204, 204, 0),
                     )
 
-        # Draw HUD for remaining fuel and vehicle mass
+        # Flip surface vertically so Box2D (y=0 at bottom) displays upright in Pygame
+        self.surf = pygame.transform.flip(self.surf, False, True)
+
+        # Draw HUD for remaining fuel and vehicle mass (after flip so text is upright)
         if pygame.font.get_init():
             font = pygame.font.SysFont("Arial", 14)
             fuel_pct = (self.fuel / self.initial_fuel) * 100
             current_mass = self.lander.mass if self.lander else 0.0
-            fuel_text = font.render(f"Fuel: {self.fuel:5.1f} kg ({fuel_pct:4.1f}%) | Mass: {current_mass:4.2f} kg", True, (255, 255, 255))
+            fuel_text = font.render(f"Fuel: {self.fuel:5.1f} kg ({fuel_pct:4.1f}%) | Mass: {current_mass:4.2f} kg", True, (20, 20, 20))
             self.surf.blit(fuel_text, (10, 10))
 
         if self.render_mode == "human":
