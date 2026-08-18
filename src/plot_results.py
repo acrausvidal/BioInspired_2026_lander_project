@@ -128,7 +128,7 @@ def plot_nominal_learning_curve(csv_path: str = "results/nominal_learning_curve.
     ax3.plot(timesteps, fuel_rem, color=AERO_COLORS["accent3"], lw=2.2, marker="s", markersize=4)
     # ax3.set_title(r"\textbf{Propellant Conserved at Touchdown}")
     ax3.set_xlabel(r"Environment Timesteps ($t$)")
-    ax3.set_ylabel(r"Remaining Propellant $F(t)$ (\si{\kilogram})")
+    ax3.set_ylabel(r"Remaining Propellant $F(t)$ (\%)")
     ax3.set_ylim(0, 105)
     ax3.grid(True)
     ax3.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, p: f"{int(x/1000)}k"))
@@ -194,7 +194,7 @@ def plot_nominal_learning_curve_episodes(csv_path: str = "results/nominal_learni
     ax3.plot(x_vals, fuel_rem, color=AERO_COLORS["accent3"], lw=2.2, marker="s", markersize=4)
     # ax3.set_title(r"\textbf{Propellant Conserved at Touchdown}")
     ax3.set_xlabel(x_label)
-    ax3.set_ylabel(r"Remaining Propellant (\si{\kilogram})")
+    ax3.set_ylabel(r"Remaining Propellant (\%)")
     ax3.set_ylim(0, 105)
     ax3.grid(True)
 
@@ -205,6 +205,7 @@ def plot_nominal_learning_curve_episodes(csv_path: str = "results/nominal_learni
 def plot_sensitivity_analysis(csv_path: str = "results/sensitivity_analysis.csv", output_dir: str = "results"):
     """
     Plot hyperparameter sensitivity comparison (both combined dashboard and individual high-res plots).
+    Uses the original warm aerospace palette (#005F73, #EE9B00, #AE2012, #0A9396).
     """
     if not os.path.exists(csv_path):
         return
@@ -219,7 +220,8 @@ def plot_sensitivity_analysis(csv_path: str = "results/sensitivity_analysis.csv"
         "Exploration-Exploitation (Entropy)": "ent_coef",
     }
 
-    colors_list = ["#1D3557", "#457B9D", "#2A9D8F", "#E76F51"]
+    # Original warm aerospace palette
+    colors_list = ["#005F73", "#EE9B00", "#AE2012", "#0A9396"]
 
     # 1. Combined 3-Panel Dashboard
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.5), sharey=True)
@@ -257,7 +259,7 @@ def plot_sensitivity_analysis(csv_path: str = "results/sensitivity_analysis.csv"
     _save_multi_format(fig, os.path.join(output_dir, "sensitivity_comparison_dashboard"))
     plt.close()
 
-    # 2. Individual Dedicated Plots for Each Parameter (with LaTeX labels & no title)
+    # 2. Individual Dedicated Plots for Each Parameter (with original palette & LaTeX labels)
     for cat in categories:
         cat_df = df[df["category"] == cat]
         param_name = cat_df["parameter"].iloc[0]
@@ -385,7 +387,7 @@ def plot_trajectory_profile(model_path: str = "models/best_model.zip", output_di
     # Subplot 5: Propellant Depletion
     axes[2, 0].plot(time_steps, fuels, color=AERO_COLORS["accent3"], lw=2.5)
     axes[2, 0].set_xlabel(r"Mission Flight Time $t$ (\si{\second})")
-    axes[2, 0].set_ylabel(r"Propellant $F(t)$ (\si{\kilogram})")
+    axes[2, 0].set_ylabel(r"Propellant Remaining $F(t)$ (\%)")
     # axes[2, 0].set_title(r"\textbf{Propellant Mass Depletion}")
     axes[2, 0].grid(True)
 

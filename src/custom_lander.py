@@ -665,7 +665,7 @@ class CustomLunarLanderContinuous(gym.Env, EzPickle):
             font = pygame.font.SysFont("Arial", 14)
             fuel_pct = (self.fuel / self.initial_fuel) * 100
             current_mass = self.lander.mass if self.lander else 0.0
-            fuel_text = font.render(f"Fuel: {self.fuel:5.1f} kg ({fuel_pct:4.1f}%) | Mass: {current_mass:4.2f} kg", True, (20, 20, 20))
+            fuel_text = font.render(f"Propellant: {fuel_pct:4.1f}% | Vehicle Mass: {current_mass:4.2f} kg", True, (20, 20, 20))
             self.surf.blit(fuel_text, (10, 10))
 
         if self.render_mode == "human":
