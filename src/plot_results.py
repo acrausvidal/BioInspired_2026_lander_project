@@ -344,55 +344,136 @@ def plot_trajectory_profile(model_path: str = "models/best_model.zip", output_di
     plt.close()
 
 
+def format_param_label(category: str, param: str, value: str) -> str:
+    """Format hyperparameters into clean LaTeX mathematical expressions."""
+    try:
+        val_float = float(value)
+    except ValueError:
+        return f"${value}$"
+
+    if "Learning" in category or "learning_rate" in param:
+        if abs(val_float - 0.0001) < 1e-6:
+            return r"$\alpha = 10^{-4}$"
+        elif abs(val_float - 0.0003) < 1e-6:
+            return r"$\alpha = 3 \times 10^{-4}$"
+        elif abs(val_float - 0.001) < 1e-6:
+            return r"$\alpha = 10^{-3}$"
+        return rf"$\alpha = {val_float}$"
+    elif "Discount" in category or "gamma" in param:
+        return rf"$\gamma = {val_float}$"
+    else:
+        return rf"$c_{{\text{{ent}}}} = {val_float}$"
+
+
 def plot_convergence_bar_chart(summary_csv: str = "results/convergence_summary_table.csv", output_dir: str = "results"):
     """
-    Bar plot comparing Time-to-Convergence (Steps & Return) with full LaTeX typography.
+    Publication-quality horizontal bar chart comparing sample efficiency (steps to converge)
+    and convergence return quality across hyperparameter settings.
+    Excludes non-converged runs and uses a clean, cohesive aerospace color palette.
     """
     if not os.path.exists(summary_csv):
         return
 
-    df = pd.read_csv(summary_csv)
+    raw_df = pd.read_csv(summary_csv)
     os.makedirs(output_dir, exist_ok=True)
 
-    fig, axes = plt.subplots(1, 2, figsize=(13, 5.0))
+    # 1. Filter out runs that failed to converge
+    df = raw_df[raw_df["converged"] == True].copy()
 
-    labels = [f"${row['parameter']}={row['value']}$" for _, row in df.iterrows()]
-    steps = df["steps_to_converge"] / 1000.0
+    # Sort or arrange by category for logical grouping
+    category_order = ["Learning Rate", "Discount Factor", "Exploration-Exploitation (Entropy)"]
+    df["cat_rank"] = df["category"].map(lambda c: category_order.index(c) if c in category_order else 99)
+    df = df.sort_values(by=["cat_rank", "steps_to_converge"], ascending=[True, False]).reset_index(drop=True)
 
-    colors = []
-    for cat in df["category"]:
-        if "Learning" in cat:
-            colors.append(AERO_COLORS["primary"])
-        elif "Discount" in cat:
-            colors.append(AERO_COLORS["accent1"])
-        else:
-            colors.append(AERO_COLORS["secondary"])
+    labels = [format_param_label(row["category"], row["parameter"], row["value"]) for _, row in df.iterrows()]
+    steps_k = df["steps_to_converge"] / 1000.0
+    returns = df["final_mean_reward"]
 
-    # 1. Timesteps to Convergence
-    bars1 = axes[0].barh(labels, steps, color=colors, edgecolor="black", height=0.6)
-    axes[0].set_xlabel(r"Environment Steps to Converge ($10^3$)")
-    axes[0].set_title(r"\textbf{Sample Efficiency: Steps to Convergence}")
-    axes[0].grid(True, axis="x")
+    # Refined, cohesive academic palette
+    category_colors = {
+        "Learning Rate": "#1D3557",                     # Deep Aerospace Navy
+        "Discount Factor": "#457B9D",                   # Slate / Steel Blue
+        "Exploration-Exploitation (Entropy)": "#2A9D8F", # Refined Emerald / Teal
+    }
+    colors = [category_colors.get(cat, "#457B9D") for cat in df["category"]]
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.8), gridspec_kw={"wspace": 0.35})
+
+    y_pos = np.arange(len(df))
+
+    # -------------------------------------------------------------
+    # Panel 1: Steps to Convergence (Sample Efficiency)
+    # -------------------------------------------------------------
+    bars1 = axes[0].barh(y_pos, steps_k, color=colors, edgecolor="#001219", lw=0.9, height=0.6, alpha=0.9)
+    axes[0].set_yticks(y_pos)
+    axes[0].set_yticklabels(labels, fontsize=11)
+    axes[0].set_xlabel(r"Environment Steps to Converge ($10^3$)", fontsize=11)
+    axes[0].set_title(r"\textbf{Sample Efficiency: Steps to Convergence}", fontsize=12, pad=10)
+    axes[0].set_xlim(0, 225)
+    axes[0].grid(True, axis="x", linestyle="--", alpha=0.4)
 
     for bar in bars1:
         w = bar.get_width()
-        axes[0].text(w + 2, bar.get_y() + bar.get_height()/2, f"{w:.0f}k", va="center", fontsize=9)
+        axes[0].text(
+            w + 3.5,
+            bar.get_y() + bar.get_height() / 2,
+            rf"${w:.0f}\,\text{{k}}$",
+            va="center",
+            ha="left",
+            fontsize=10,
+            fontweight="medium",
+        )
 
-    # 2. Final Return
-    rewards = df["final_mean_reward"]
-    bars2 = axes[1].barh(labels, rewards, color=colors, edgecolor="black", height=0.6)
-    axes[1].axvline(x=200, color=AERO_COLORS["danger"], linestyle=":", lw=1.8, label=r"Solved ($R \geq 200$)")
-    axes[1].set_xlabel(r"Mean Return at Stopping $\mathbb{E}[R]$")
-    axes[1].set_title(r"\textbf{Convergence Quality: Final Return}")
-    axes[1].grid(True, axis="x")
-    axes[1].legend(loc="lower right")
+    # -------------------------------------------------------------
+    # Panel 2: Final Return Achieved at Stopping
+    # -------------------------------------------------------------
+    bars2 = axes[1].barh(y_pos, returns, color=colors, edgecolor="#001219", lw=0.9, height=0.6, alpha=0.9)
+    axes[1].set_yticks(y_pos)
+    axes[1].set_yticklabels(labels, fontsize=11)
+    axes[1].set_xlabel(r"Mean Return at Convergence $\mathbb{E}[R]$", fontsize=11)
+    axes[1].set_title(r"\textbf{Convergence Quality: Final Return}", fontsize=12, pad=10)
+    axes[1].set_xlim(175, 220)
+    axes[1].grid(True, axis="x", linestyle="--", alpha=0.4)
+
+    axes[1].axvline(x=200, color="#AE2012", linestyle="--", lw=1.5, label=r"Solved ($R \geq 200$)")
+    axes[1].axvline(x=190, color="#E76F51", linestyle=":", lw=1.5, label=r"Target ($R \geq 190$)")
+    axes[1].legend(loc="lower right", framealpha=0.9, fontsize=9.5)
 
     for bar in bars2:
         w = bar.get_width()
-        axes[1].text(w + 3, bar.get_y() + bar.get_height()/2, f"{w:.1f}", va="center", fontsize=9)
+        axes[1].text(
+            w + 0.8,
+            bar.get_y() + bar.get_height() / 2,
+            rf"${w:.1f}$",
+            va="center",
+            ha="left",
+            fontsize=10,
+            fontweight="medium",
+        )
 
-    plt.suptitle(r"\textbf{Hyperparameter Convergence Benchmark: Time-to-Threshold ($R \geq 190$)}", fontsize=13, y=1.02)
-    plt.tight_layout()
+    # Add Category Legend / Annotations
+    legend_elements = [
+        plt.Rectangle((0, 0), 1, 1, facecolor=category_colors["Learning Rate"], edgecolor="black", label=r"Learning Rate $\alpha$"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=category_colors["Discount Factor"], edgecolor="black", label=r"Discount Factor $\gamma$"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=category_colors["Exploration-Exploitation (Entropy)"], edgecolor="black", label=r"Entropy $c_{\text{ent}}$"),
+    ]
+    axes[0].legend(handles=legend_elements, loc="lower right", framealpha=0.9, fontsize=9)
+
+    plt.suptitle(
+        r"\textbf{Hyperparameter Convergence Comparison: Time-to-Threshold ($R \geq 190$)}",
+        fontsize=13,
+        y=1.03,
+    )
+
+    # Footnote about the non-converged run
+    fig.text(
+        0.5,
+        -0.04,
+        r"\textit{Note: The short planning horizon configuration ($\gamma = 0.95$) failed to converge within the 200k-step safety limit and is omitted.}",
+        ha="center",
+        fontsize=9.5,
+        color="#333333",
+    )
 
     _save_multi_format(fig, os.path.join(output_dir, "convergence_comparison_barplot"))
     plt.close()
