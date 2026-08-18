@@ -17,8 +17,12 @@ logs/
 *.bbl
 *.blg
 *.log
+*.lof
+*.lot
 *.out
 *.toc
 *.fls
 *.fdb_latexmk
 *.synctex.gz
+*.bcf
+*.run.xml

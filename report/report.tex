@@ -1,0 +1,70 @@
+\documentclass{tudelft-report}
+
+%% Set up section numbering without chapters
+\counterwithout{section}{chapter}
+
+%% Set up the bibliography
+\usepackage{biblatex}
+\addbibresource{report.bib}
+
+%% Additional packages and commands
+\usepackage{parskip}
+\setlist{itemsep=-2pt} % Reducing white space in lists slightly
+\renewcommand{\deg}{\si{\degree}\xspace} % Use \deg easily, everywhere
+
+%% ----------------------------------------------------------------------
+%%    Begin of document
+%% ----------------------------------------------------------------------
+
+\begin{document}
+
+%% Define main cover parameters
+\title{Reinforcement Learning for Lander Control}
+%\subtitle{AE4350 Technical Report}
+\author{Andreu Craus Vidal (6552501)}
+
+\subject{AE4350: Bio-inspired Intelligence and Learning for Aerospace Applications} % Cover only
+\affiliation{Delft University of Technology} % Cover only
+\coverimage{figures/Cover_Gemini_3.jpg} % Aspect ratio of 2:3 (portrait) recommended
+\definecolor{title}{HTML}{4884d6} % Color for cover title
+
+\makecover
+\pagenumbering{arabic}
+
+\input{frontmatter/title-report.tex}
+
+\tableofcontents
+
+\input{frontmatter/nomenclature}
+
+%% ----------------------------------------------------------------------
+%%    Main Report Sections (AE4350 Grading Rubric)
+%% ----------------------------------------------------------------------
+
+\input{mainmatter/introduction}
+\input{mainmatter/system-description}
+\input{mainmatter/rl-controller-design}
+\input{mainmatter/results}
+\input{mainmatter/learning-effect}
+\input{mainmatter/sensitivity-analysis}
+\input{mainmatter/conclusion}
+
+%% Prevent urls running into margins in bibliography
+\setcounter{biburlnumpenalty}{7000}
+\setcounter{biburllcpenalty}{7000}
+\setcounter{biburlucpenalty}{7000}
+
+%% Add bibliography
+\printbibliography[heading=bibintoc,title=References]
+
+%% ----------------------------------------------------------------------
+%%    Appendix
+%% ----------------------------------------------------------------------
+\newpage
+\appendix
+\renewcommand{\thesection}{\Alph{section}}
+
+\input{appendix/appendix-a}
+\input{appendix/appendix-b}
+
+\end{document}
