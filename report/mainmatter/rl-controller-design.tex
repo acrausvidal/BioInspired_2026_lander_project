@@ -49,14 +49,15 @@ The complete PPO loss is then a combination of the clipped policy objective, the
 where $c_v = 0.50$ is the value loss weighting, $R_t$ is the target return and $c_{\text{ent}} \mathcal{H}(\pi_\theta(\cdot \mid s_t))$ is the entropy term (see following section).
 
 \subsection{Continuous Exploration}
+\label{sec:continuous_exploration}
 In discrete RL algorithms (such as Q-learning), exploration is commonly handled using an $\epsilon$-greedy strategy, where the agent selects a random discrete action with probability $\epsilon$ and the greedy action with probability $1-\epsilon$ \cite{vankampen2025lecture}.
 
 However, $\epsilon$-greedy cannot be directly applied to continuous flight control because of two main reasons:
 \begin{enumerate}[leftmargin=*,label=\textbf{\arabic*.}]
-    \item \textbf{Destabilizing Control Chattering:} Sampling completely random continuous actions across $[-1, 1]$ introduces abrupt, high-frequency control spikes. In a real-life dynamic aerospace system, such chattering causes severe attitude oscillations and doesn't actually help the agent explore meaningful trajectories because the system's momentum smooths out the small, random spikes \cite{sutton2018reinforcement}.
-    \item \textbf{Loss of Policy Gradients:} Hard random switching prevents smooth gradient backpropagation through the policy parameters.
+    \item \textbf{Destabilizing Control Chattering:} Sampling completely random continuous actions across $[-1, 1]$ introduces abrupt, high-frequency control spikes. In a real-life dynamic aerospace system, such chattering causes severe attitude oscillations and doesn't actually help the agent explore meaningful trajectories because the system's momentum smooths out the small, random spikes.
+    \item \textbf{Loss of Policy Gradients:} Hard random switching prevents smooth gradient backpropagation through the policy parameters  \cite{sutton2018reinforcement}.
 \end{enumerate}
 
-Instead, continuous Actor-Critic algorithms like PPO explore smoothly by sampling actions from the parameterized Gaussian distribution $\pi(u \mid s) \sim \mathcal{N}(\mu(s), \sigma^2)$. The exploration-exploitation trade-off is governed by the \emph{entropy} (spread) of this distribution. To prevent the policy from prematurely collapsing its exploration variance ($\sigma \to 0$) into a suboptimal local strategy, an \textbf{entropy bonus} term $c_{\text{ent}} \mathcal{H}(\pi)$ is added to the training loss function as shown in \cref{eq:ppo_total_loss}.
+Instead, continuous actor-critic algorithms like PPO explore smoothly by sampling actions from the parameterized Gaussian distribution $\pi(u \mid s) \sim \mathcal{N}(\mu(s), \sigma^2)$. The exploration-exploitation trade-off is governed by the \emph{entropy} (spread) of this distribution. To prevent the policy from prematurely collapsing its exploration variance ($\sigma \to 0$) into a suboptimal local strategy, an \textbf{entropy bonus} term $c_{\text{ent}} \mathcal{H}(\pi)$ is added to the training loss function as shown in \cref{eq:ppo_total_loss}.
 
 Ultimately, the entropy coefficient $c_{\text{ent}}$ acts as a hyperparameter that controls how much the agent is encouraged to explore different throttle combinations during early training while smoothly transitioning to deterministic, fine-tuned control as learning progresses. In literature, this coefficient typically spans a range between \(0\) and \(0.05\), with the original PPO benchmarks utilizing a baseline value of \(0.01\) to actively avoid premature policy convergence \cite{schulman2017proximal}.

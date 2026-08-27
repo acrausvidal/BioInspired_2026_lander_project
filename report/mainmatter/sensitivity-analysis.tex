@@ -3,7 +3,7 @@
 
 Hyperparameter selection strongly influences the learning speed, stability, and final performance of reinforcement learning controllers \cite{vankampen2025lecture}. To evaluate the sensitivity of the PPO agent, three critical parameters were systematically analyzed: the learning rate $\alpha$, the discount factor $\gamma$, and the entropy coefficient $c_{\text{ent}}$.
 
-A certified convergence criterion was defined to evaluate training: achieving a mean evaluation reward $\bar{R} \ge 190.0$ with a landing success rate $\ge 90\%$. The comparative results are summarized in \Cref{tab:sensitivity_summary}.
+A certified convergence criterion was defined to evaluate training: achieving a mean evaluation reward $\bar{R} \ge 190.0$ with a landing success rate $\ge 90\%$. The comparative results are summarized in \Cref{tab:sensitivity_summary}, with the individual learning trajectories illustrated in \Cref{fig:sensitivity_lr,fig:sensitivity_gamma,fig:sensitivity_entropy}, and the overall convergence comparison presented in \Cref{fig:convergence_barplot}.
 
 \begin{table}[H]
     \centering
@@ -33,11 +33,11 @@ A certified convergence criterion was defined to evaluate training: achieving a 
 \end{table}
 
 \subsection{Influence of the Learning Rate \texorpdfstring{$\alpha$}{alpha}}
-The learning rate $\alpha$ controls the step size taken by the Adam optimizer when updating the weights of the Actor and Critic neural networks. Three values were tested: $1.0 \times 10^{-4}$, $3.0 \times 10^{-4}$, and $1.0 \times 10^{-3}$.
+The learning rate $\alpha$ controls the step size taken by the optimizer when updating the weights of the Actor and Critic neural networks. Three values were tested: $1.0 \times 10^{-4}$, $3.0 \times 10^{-4}$, and $1.0 \times 10^{-3}$.
 
-\begin{figure}[H]
+\begin{figure}[htb]
     \centering
-    \includegraphics[width=0.82\linewidth]{figures/sensitivity_learning_rate.pdf}
+    \includegraphics[width=0.75\linewidth]{figures/sensitivity_learning_rate.pdf}
     \caption{Evaluation reward progression for different learning rates $\alpha$, with their respective $\pm 1\sigma$ confidence bands.}
     \label{fig:sensitivity_lr}
 \end{figure}
@@ -50,31 +50,32 @@ As shown in \Cref{fig:sensitivity_lr}, increasing the learning rate directly spe
 \end{itemize}
 
 \subsection{Influence of the Discount Factor \texorpdfstring{$\gamma$}{gamma}}
-The discount factor $\gamma$ defines the agent's effective planning horizon, determining how heavily future rewards are weighted against immediate rewards \cite{vankampen2025lecture}. Three values were compared: $0.95$, $0.99$, and $0.999$.
+The discount factor $\gamma$ defines the agent's effective planning horizon, determining how heavily future rewards are weighted against immediate rewards \cite{sutton2018reinforcement}. Three values were compared: $0.95$, $0.99$, and $0.999$.
 
-\begin{figure}[H]
+\begin{figure}[htb]
     \centering
-    \includegraphics[width=0.82\linewidth]{figures/sensitivity_gamma.pdf}
+    \includegraphics[width=0.75\linewidth]{figures/sensitivity_gamma.pdf}
     \caption{Evaluation reward progression for different discount factors $\gamma$.}
     \label{fig:sensitivity_gamma}
 \end{figure}
 
-The discount factor proved to be the most influential hyperparameter in this study:
+As illustrated in \Cref{fig:sensitivity_gamma}, the discount factor proved to be the most influential hyperparameter in this study:
 \begin{itemize}[leftmargin=*,label=$\bullet$]
     \item \textbf{Complete Failure with $\gamma = 0.95$:} The agent completely failed to learn a successful landing policy ($0\%$ success rate, $-115.76$ average reward). In a typical descent lasting $200$ to $300$ steps, discounting by $\gamma = 0.95$ reduces the value of the $+100$ touchdown reward at step $200$ to $0.95^{200} \approx 3.5 \times 10^{-5}$, making the final landing goal virtually invisible to the agent during flight. As a result, the agent acts myopically, firing full thrusters early to maximize immediate position shaping and running out of fuel before touching down.
-    \item \textbf{Far-Sighted Planning with $\gamma = 0.999$:} By extending the planning horizon, the agent accounts for the cumulative fuel penalty over the entire descent. This encourages the agent to discover a fuel-efficient ballistic coast followed by a timely braking burn, conserving an impressive $64.9\%$ of propellant at touchdown.
+    \item \textbf{Far-Sighted Planning with $\gamma = 0.999$:} By extending the planning horizon, the agent accounts for the cumulative fuel penalty over the entire descent. This encourages the agent to discover a fuel-efficient ballistic coast followed by a timely braking burn, conserving an impressive $64.9\%$ of propellant at touchdown (\cref{tab:sensitivity_summary}).
 \end{itemize}
 
 \subsection{Influence of the Entropy Coefficient \texorpdfstring{$c_{\text{ent}}$}{c_ent}}
-In continuous RL, the entropy coefficient $c_{\text{ent}}$ governs the exploration-exploitation balance by penalizing premature collapse of the Gaussian policy variance $\sigma^2$. Three values were evaluated: $0.0$, $0.01$, and $0.05$.
+As explained in \Cref{sec:continuous_exploration}, the entropy coefficient $c_{\text{ent}}$ governs the exploration-exploitation balance by penalizing premature collapse of the Gaussian policy variance $\sigma^2$. Three values were evaluated: $0.0$, $0.01$, and $0.05$.
 
-\begin{figure}[H]
+\begin{figure}[htb]
     \centering
-    \includegraphics[width=0.82\linewidth]{figures/sensitivity_ent_coef.pdf}
+    \includegraphics[width=0.75\linewidth]{figures/sensitivity_ent_coef.pdf}
     \caption{Evaluation reward progression for different entropy regularization coefficients $c_{\text{ent}}$.}
     \label{fig:sensitivity_entropy}
 \end{figure}
 
+As shown in \Cref{fig:sensitivity_entropy}, the entropy regularization coefficient directly governs exploration during training:
 \begin{itemize}[leftmargin=*,label=$\bullet$]
     \item With $c_{\text{ent}} = 0.0$ (no entropy bonus), the action variance shrinks quickly, locking the agent into an overly conservative policy that converges more slowly ($120{,}000$ steps) and burns more propellant ($31.3\%$ remaining).
     \item With $c_{\text{ent}} = 0.05$, active exploration across continuous throttle combinations allows the agent to discover efficient landing maneuvers faster, reaching convergence in $90{,}000$ steps with $100\%$ landing success and $42.8\%$ fuel remaining.
@@ -85,7 +86,7 @@ A comparison of the total environment steps and wall-clock execution time requir
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.99\linewidth]{figures/convergence_comparison_barplot.pdf}
+    \includegraphics[width=0.78\linewidth]{figures/convergence_comparison_barplot.pdf}
     \caption{Comparison of training steps and execution time to achieve certified convergence across hyperparameter configurations.}
     \label{fig:convergence_barplot}
 \end{figure}
