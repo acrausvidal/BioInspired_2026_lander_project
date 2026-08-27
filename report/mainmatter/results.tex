@@ -1,4 +1,5 @@
-\section{Results and Learned Flight Strategy}
+\newpage
+\section{Learned Flight Strategy and Performance}
 \label{sec:results}
 
 \subsection{Closed-Loop Flight Trajectory Analysis}
@@ -14,7 +15,7 @@ To understand the control behavior discovered by the trained PPO agent, a repres
 The learned control policy executes an intuitive three-stage landing strategy:
 \begin{enumerate}[leftmargin=*,label=\textbf{\arabic*.}]
     \item \textbf{Initial Attitude Alignment:} The lander starts at the top of the viewport with a random initial tilt and velocity disturbance. The agent immediately uses short side-thruster bursts ($|u_2| \approx 0.6$) to cancel out angular velocity ($\omega \to 0$) and re-orient the vehicle towards the vertical.
-    \item \textbf{Controlled Deceleration with Mass Adaptation:} As the lander falls towards the surface, the agent throttles up the main engine ($u_1 \approx 0.30$) to arrest its downward descent speed. Crucially, as propellant is consumed and the vehicle becomes lighter (losing $\approx 25\%$ of its mass during the burn), the agent fires shorter and smaller bursts.
+    \item \textbf{Controlled Deceleration with Mass Adaptation:} As the lander falls towards the surface, the agent throttles up the main engine ($u_1 \approx 0.70$) to arrest its downward descent speed. Crucially, as propellant is consumed and the vehicle becomes lighter (losing $\approx 25\%$ of its mass during the burn), the agent fires shorter and weaker ($u_1 \approx 0.58$) bursts.
     \item \textbf{Touchdown and Quiescent Settling:} Near the ground, the controller applies brief throttle pulses to achieve a gentle vertical touchdown speed ($v_y \approx -0.20\,\si{m/s}$). Both landing legs touch the ground simultaneously, absorbing the residual kinetic energy, and the engines shut off completely as the lander settles safely to rest.
 \end{enumerate}
 
