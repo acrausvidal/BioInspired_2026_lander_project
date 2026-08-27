@@ -6,7 +6,7 @@ The complete training and simulation loop combining the continuous PPO controlle
 \vspace{0.5em}
 \noindent\fbox{%
     \parbox{\textwidth}{%
-        \textbf{Algorithm A.1: Continuous PPO on Mass-Varying Lunar Lander}
+        \textbf{Algorithm A.1: Continuous PPO on Mass-Varying Lunar Lander} (adapted from \cite{schulman2017proximal})
         \vspace{0.3em}\hrule\vspace{0.5em}
         \begin{enumerate}[leftmargin=1.8em,itemsep=2pt]
             \item \textbf{Initialization:}
@@ -36,9 +36,9 @@ The complete training and simulation loop combining the continuous PPO controlle
                       \item \textbf{Network Optimization (for 10 epochs over mini-batches of size 64):}
                             \begin{itemize}[leftmargin=1.2em,itemsep=1pt]
                                 \item Compute policy probability ratio $r_t(\theta) = \frac{\pi_\theta(u_t \mid s_t)}{\pi_{\theta_{\text{old}}}(u_t \mid s_t)}$.
-                                \item Compute clipped surrogate loss $L^{\text{CLIP}}(\theta)$ using \Cref{eq:ppo_clip}.
                                 \item Compute Critic squared error loss $L^{\text{VF}}(\phi) = (V_\phi(s_t) - R_t)^2$.
                                 \item Compute Gaussian entropy bonus $\mathcal{H}(\pi)$.
+                                \item Compute clipped surrogate loss $L^{\text{CLIP}}(\theta)$ and total PPO loss $L^{\text{PPO}}(\theta, \phi)$ using \Cref{eq:ppo_clip,eq:ppo_total_loss}.
                                 \item Update Actor ($\theta$) and Critic ($\phi$) network weights using the Adam optimizer with learning rate $\alpha$.
                             \end{itemize}
                   \end{enumerate}

@@ -2,6 +2,8 @@ import os
 import sys
 import shutil
 
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 # Ensure workspace root is in sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -347,8 +349,12 @@ def plot_trajectory_profile(model_path: str = "models/best_model.zip", output_di
         velocities_x.append(obs[2])
         velocities_y.append(obs[3])
         angles.append(np.degrees(obs[4]))
-        main_throttles.append(max(0.0, action[0]))
-        side_throttles.append(action[1])
+        
+        # Physical throttle values applied by the environment
+        u_main_phys = 0.5 * (action[0] + 1.0) if action[0] > 0.0 else 0.0
+        u_side_phys = np.sign(action[1]) * np.clip(np.abs(action[1]), 0.5, 1.0) if np.abs(action[1]) > 0.5 else 0.0
+        main_throttles.append(u_main_phys)
+        side_throttles.append(u_side_phys)
         fuels.append(info.get("fuel_remaining", 0.0))
         masses.append(info.get("lander_mass", 0.0))
 
@@ -358,51 +364,51 @@ def plot_trajectory_profile(model_path: str = "models/best_model.zip", output_di
     env.close()
 
     time_steps = np.array(time_steps)
-    fig, axes = plt.subplots(3, 2, figsize=(9.5, 7.2), sharex=True)
+    fig, axes = plt.subplots(3, 2, figsize=(8.6, 6.8), sharex=True)
 
-    # Subplot 1: Altitude & Horizontal
-    axes[0, 0].plot(time_steps, positions_y, color=AERO_COLORS["primary"], lw=2.4, label=r"Altitude $y(t)$")
-    axes[0, 0].plot(time_steps, positions_x, color=AERO_COLORS["accent1"], lw=2.2, linestyle="--", label=r"Lateral $x(t)$")
-    axes[0, 0].set_ylabel(r"Position (Normalized)", fontsize=12)
-    axes[0, 0].tick_params(axis="both", labelsize=11)
+    # Subplot 1: Altitude & Horizontal Position
+    axes[0, 0].plot(time_steps, positions_y, color=AERO_COLORS["primary"], lw=2.6, label=r"Altitude $y(t)$")
+    axes[0, 0].plot(time_steps, positions_x, color=AERO_COLORS["accent1"], lw=2.4, linestyle="--", label=r"Lateral $x(t)$")
+    axes[0, 0].set_ylabel(r"Position (Norm.)", fontsize=13.5)
+    axes[0, 0].tick_params(axis="both", labelsize=12)
     axes[0, 0].grid(True)
-    axes[0, 0].legend(fontsize=11)
+    axes[0, 0].legend(fontsize=12, loc="upper right")
 
-    # Subplot 2: Velocities
-    axes[0, 1].plot(time_steps, velocities_y, color=AERO_COLORS["danger"], lw=2.4, label=r"Vertical $v_y(t)$")
-    axes[0, 1].plot(time_steps, velocities_x, color=AERO_COLORS["secondary"], lw=2.2, linestyle="--", label=r"Lateral $v_x(t)$")
-    axes[0, 1].set_ylabel(r"Velocity (Normalized)", fontsize=12)
-    axes[0, 1].tick_params(axis="both", labelsize=11)
+    # Subplot 2: Translational Velocities
+    axes[0, 1].plot(time_steps, velocities_y, color=AERO_COLORS["danger"], lw=2.6, label=r"Vertical $v_y(t)$")
+    axes[0, 1].plot(time_steps, velocities_x, color=AERO_COLORS["secondary"], lw=2.4, linestyle="--", label=r"Lateral $v_x(t)$")
+    axes[0, 1].set_ylabel(r"Velocity (Norm.)", fontsize=13.5)
+    axes[0, 1].tick_params(axis="both", labelsize=12)
     axes[0, 1].grid(True)
-    axes[0, 1].legend(fontsize=11)
+    axes[0, 1].legend(fontsize=12, loc="upper right")
 
-    # Subplot 3: Orientation Angle
-    axes[1, 0].plot(time_steps, angles, color=AERO_COLORS["accent2"], lw=2.4)
+    # Subplot 3: Pitch Attitude
+    axes[1, 0].plot(time_steps, angles, color=AERO_COLORS["accent2"], lw=2.6)
     axes[1, 0].axhline(y=0, color="gray", linestyle=":", alpha=0.7)
-    axes[1, 0].set_ylabel(r"Pitch Angle $\theta$ (\si{\degree})", fontsize=12)
-    axes[1, 0].tick_params(axis="both", labelsize=11)
+    axes[1, 0].set_ylabel(r"Pitch $\theta$ (\si{\degree})", fontsize=13.5)
+    axes[1, 0].tick_params(axis="both", labelsize=12)
     axes[1, 0].grid(True)
 
-    # Subplot 4: Continuous Throttles
-    axes[1, 1].plot(time_steps, main_throttles, color=AERO_COLORS["primary"], lw=2.2, label=r"Main $u_{\text{main}}(t)$")
-    axes[1, 1].plot(time_steps, side_throttles, color=AERO_COLORS["accent3"], lw=2.0, linestyle="--", label=r"Lateral $u_{\text{side}}(t)$")
-    axes[1, 1].set_ylabel(r"Control Action $u(t)$", fontsize=12)
-    axes[1, 1].tick_params(axis="both", labelsize=11)
+    # Subplot 4: Continuous Physical Throttles
+    axes[1, 1].plot(time_steps, main_throttles, color=AERO_COLORS["primary"], lw=2.6, label=r"Main $u_{\text{main}}(t)$")
+    axes[1, 1].plot(time_steps, side_throttles, color=AERO_COLORS["accent3"], lw=2.2, linestyle="--", label=r"Lateral $u_{\text{side}}(t)$")
+    axes[1, 1].set_ylabel(r"Throttle $u(t)$", fontsize=13.5)
+    axes[1, 1].tick_params(axis="both", labelsize=12)
     axes[1, 1].grid(True)
-    axes[1, 1].legend(fontsize=11)
+    axes[1, 1].legend(fontsize=12, loc="upper right")
 
     # Subplot 5: Propellant Depletion
-    axes[2, 0].plot(time_steps, fuels, color=AERO_COLORS["accent3"], lw=2.6)
-    axes[2, 0].set_xlabel(r"Mission Flight Time $t$ (\si{\second})", fontsize=12.5)
-    axes[2, 0].set_ylabel(r"Fuel Remaining $F(t)$ (\%)", fontsize=12)
-    axes[2, 0].tick_params(axis="both", labelsize=11)
+    axes[2, 0].plot(time_steps, fuels, color=AERO_COLORS["accent3"], lw=2.8)
+    axes[2, 0].set_xlabel(r"Flight Time $t$ (\si{\second})", fontsize=13.5)
+    axes[2, 0].set_ylabel(r"Fuel $F(t)$ (\%)", fontsize=13.5)
+    axes[2, 0].tick_params(axis="both", labelsize=12)
     axes[2, 0].grid(True)
 
     # Subplot 6: Mass-Varying System
-    axes[2, 1].plot(time_steps, masses, color=AERO_COLORS["secondary"], lw=2.6)
-    axes[2, 1].set_xlabel(r"Mission Flight Time $t$ (\si{\second})", fontsize=12.5)
-    axes[2, 1].set_ylabel(r"Total Mass $m(t)$ (\si{\kilogram})", fontsize=12)
-    axes[2, 1].tick_params(axis="both", labelsize=11)
+    axes[2, 1].plot(time_steps, masses, color=AERO_COLORS["secondary"], lw=2.8)
+    axes[2, 1].set_xlabel(r"Flight Time $t$ (\si{\second})", fontsize=13.5)
+    axes[2, 1].set_ylabel(r"Total Mass $m(t)$ (\si{\kilogram})", fontsize=13.5)
+    axes[2, 1].tick_params(axis="both", labelsize=12)
     axes[2, 1].grid(True)
 
     plt.tight_layout()

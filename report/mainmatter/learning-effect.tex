@@ -4,9 +4,9 @@
 \subsection{Nominal Training Progress}
 To evaluate the learning process, the nominal PPO agent was trained for $300{,}000$ environment timesteps across 4 parallel environments using baseline hyperparameters ($\alpha = 3 \times 10^{-4}$, $\gamma = 0.99$, $c_{\text{ent}} = 0.01$). Every $10{,}000$ steps, the policy was evaluated over 15 test episodes without exploration noise. The resulting learning curves are presented in \Cref{fig:nominal_learning_curve}.
 
-\begin{figure}[H]
+\begin{figure}[htb]
     \centering
-    \includegraphics[width=0.88\linewidth]{figures/nominal_learning_curve.pdf}
+    \includegraphics[width=0.85\linewidth]{figures/nominal_learning_curve.pdf}
     \caption{Training progression of the nominal PPO agent over 300k timesteps: mean evaluation reward with $\pm 1\sigma$ confidence band (top), safe landing success rate (bottom-left), and mean remaining propellant at touchdown (bottom-right).}
     \label{fig:nominal_learning_curve}
 \end{figure}
