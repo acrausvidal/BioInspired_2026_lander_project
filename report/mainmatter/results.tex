@@ -6,7 +6,7 @@ To understand the control behavior discovered by the trained PPO agent, a repres
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.88\linewidth]{figures/trajectory_analysis.pdf}
+    \includegraphics[width=0.98\linewidth]{figures/trajectory_analysis.pdf}
     \caption{Time history of a representative closed-loop landing flight: position, velocity, pitch angle, mass depletion, and continuous throttle commands.}
     \label{fig:trajectory_overview}
 \end{figure}
@@ -28,16 +28,16 @@ To evaluate the reliability of the controller, a Monte Carlo test campaign of $N
     \label{tab:touchdown_metrics}
     \begin{tabular}{lrrr}
         \toprule
-        \textbf{Metric} & \textbf{Mean ($\mu$)} & \textbf{Std. Dev. ($\sigma$)} & \textbf{Target Envelope} \\
+        \textbf{Metric}                       & \textbf{Mean ($\mu$)} & \textbf{Std. Dev. ($\sigma$)} & \textbf{Target Envelope}   \\
         \midrule
-        Landing Success Rate (\%)           & $98.0\%$              & ---                           & $\ge 90.0\%$ \\
-        Touchdown Horizontal Position ($x$) & $+0.014\,\si{m}$      & $\pm 0.042\,\si{m}$           & $\le \pm 0.20\,\si{m}$ \\
-        Touchdown Vertical Velocity ($v_y$) & $-0.118\,\si{m/s}$    & $\pm 0.048\,\si{m/s}$         & $\le 0.50\,\si{m/s}$ \\
-        Touchdown Horizontal Velocity ($v_x$)& $+0.012\,\si{m/s}$   & $\pm 0.028\,\si{m/s}$         & $\le 0.20\,\si{m/s}$ \\
-        Touchdown Pitch Angle ($\theta$)    & $+0.006\,\si{rad}$    & $\pm 0.021\,\si{rad}$         & $\le \pm 0.10\,\si{rad}$ \\
-        Touchdown Angular Rate ($\omega$)   & $+0.003\,\si{rad/s}$  & $\pm 0.018\,\si{rad/s}$       & $\le \pm 0.05\,\si{rad/s}$ \\
-        Remaining Fuel at Touchdown (\%)    & $53.82\%$             & $\pm 4.61\%$                  & $\ge 30.0\%$ \\
-        Descent Flight Time ($t$)           & $7.58\,\si{s}$        & $\pm 0.74\,\si{s}$            & $\le 12.0\,\si{s}$ \\
+        Landing Success Rate (\%)             & $98.0\%$              & ---                           & $\ge 90.0\%$               \\
+        Touchdown Horizontal Position ($x$)   & $+0.014\,\si{m}$      & $\pm 0.042\,\si{m}$           & $\le \pm 0.20\,\si{m}$     \\
+        Touchdown Vertical Velocity ($v_y$)   & $-0.118\,\si{m/s}$    & $\pm 0.048\,\si{m/s}$         & $\le 0.50\,\si{m/s}$       \\
+        Touchdown Horizontal Velocity ($v_x$) & $+0.012\,\si{m/s}$    & $\pm 0.028\,\si{m/s}$         & $\le 0.20\,\si{m/s}$       \\
+        Touchdown Pitch Angle ($\theta$)      & $+0.006\,\si{rad}$    & $\pm 0.021\,\si{rad}$         & $\le \pm 0.10\,\si{rad}$   \\
+        Touchdown Angular Rate ($\omega$)     & $+0.003\,\si{rad/s}$  & $\pm 0.018\,\si{rad/s}$       & $\le \pm 0.05\,\si{rad/s}$ \\
+        Remaining Fuel at Touchdown (\%)      & $53.82\%$             & $\pm 4.61\%$                  & $\ge 30.0\%$               \\
+        Descent Flight Time ($t$)             & $7.58\,\si{s}$        & $\pm 0.74\,\si{s}$            & $\le 12.0\,\si{s}$         \\
         \bottomrule
     \end{tabular}
 \end{table}

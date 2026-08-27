@@ -22,6 +22,7 @@
 \RequirePackage{mathtools}  % Mathematical tools to use with amsmath
 \RequirePackage{amssymb}    % Extended symbol collection
 \RequirePackage{siunitx}    % Comprehensive (SI) units package
+\RequirePackage{pifont}
 
 \RequirePackage{tabularx}   % Tabulars with adjustable-width columns
 \RequirePackage{booktabs}   % Publication quality tables
@@ -49,6 +50,9 @@
 \RequirePackage{etoolbox}   % Toolbox of programming facilities
 \RequirePackage{iftex}      % Adds if-else statements to support multiple compilers
 \RequirePackage{datetime}   % Change format of \today
+
+\newcommand{\cmark}{\checkmark}
+\newcommand{\xmark}{\ding{55}}
 
 %% Establish commands for the subtitle, subject, affiliation, cover image and table of authors
 \newcommand*{\subtitle}[1]{\def\@subtitle{#1}}
@@ -91,34 +95,34 @@
 
 %% Format the chapter titles and spacing
 \titleformat{\chapter}[display]
-    {\flushright}
-    {\fontsize{96}{96}\selectfont\largetitlestyle\thechapter}
-    {0pt}
-    {\Huge\titlestyle}
+{\flushright}
+{\fontsize{96}{96}\selectfont\largetitlestyle\thechapter}
+{0pt}
+{\Huge\titlestyle}
 \titlespacing*{\chapter}{0pt}{0pt}{2\baselineskip}
 
 %% Format the section titles and spacing
 \titleformat{\section}
-    {\Large\titlestyle\bfseries}
-    {\thesection.}
-    {5pt}
-    {}
+{\Large\titlestyle\bfseries}
+{\thesection.}
+{5pt}
+{}
 \titlespacing*{\section}{0pt}{\baselineskip}{0pt}
 
 %% Format the subsections titles and spacing
 \titleformat{\subsection}
-    {\large\titlestyle\bfseries}
-    {\thesubsection.}
-    {5pt}
-    {}
+{\large\titlestyle\bfseries}
+{\thesubsection.}
+{5pt}
+{}
 \titlespacing*{\subsection}{0pt}{\baselineskip}{0pt}
 
 %% Format the subsubsections titles and spacing
 \titleformat{\subsubsection}
-    {\titlestyle\bfseries}
-    {\thesubsubsection.}
-    {5pt}
-    {}
+{\titlestyle\bfseries}
+{\thesubsubsection.}
+{5pt}
+{}
 \titlespacing*{\subsubsection}{0pt}{\bigskipamount}{0pt}
 
 %% Reduce the vertical white space between chapters in the table of contents
@@ -178,14 +182,14 @@
             \begin{minipage}{0.9\paperwidth}
                 %% Format and add the title
                 \color{title}\raggedright\largetitlestyle\fontsize{50}{50}\selectfont%
-                    \@title \\[0.5ex]
+                \@title \\[0.5ex]
                 %% Format and add (optional) subtitle and subject
                 \color{white}\titlestyle\fontsize{22}{22}\selectfont%
-                    \ifdefvoid{\@subtitle}{}{\@subtitle \\[2.5ex]}%
-                    \ifdefvoid{\@subject}{}{\@subject \\[0.5ex]}
+                \ifdefvoid{\@subtitle}{}{\@subtitle \\[2.5ex]}%
+                \ifdefvoid{\@subject}{}{\@subject \\[0.5ex]}
                 %% Format and add author or table of authors
                 \largetitlestyle\fontsize{24}{24}\selectfont%
-                    \ifdefvoid{\@covertable}{\@author}{\@covertable}
+                \ifdefvoid{\@covertable}{\@author}{\@covertable}
             \end{minipage}};
 
     \end{tikzpicture}
@@ -199,13 +203,13 @@
 \RequirePackage{listings} % Typeset source code listings
 
 \lstset{
-  basicstyle=\ttfamily\footnotesize,  % Style of the font that is used for the code
-  backgroundcolor=\color{gray!10},    % Background color
-  keywordstyle=\color{red!75!black},  % Keyword style
-  stringstyle=\color{green!40!black}, % String style
-  commentstyle=\color{blue!30!black}, % Comment style
-  numbers=left,                       % Add line numbers on the left side
-  numbersep=5pt,                      % Decrease distance between line numbers and code
-  numberstyle=\tiny,                  % Line number style
-  breaklines=true,                    % Line break automatically
+    basicstyle=\ttfamily\footnotesize,  % Style of the font that is used for the code
+    backgroundcolor=\color{gray!10},    % Background color
+    keywordstyle=\color{red!75!black},  % Keyword style
+    stringstyle=\color{green!40!black}, % String style
+    commentstyle=\color{blue!30!black}, % Comment style
+    numbers=left,                       % Add line numbers on the left side
+    numbersep=5pt,                      % Decrease distance between line numbers and code
+    numberstyle=\tiny,                  % Line number style
+    breaklines=true,                    % Line break automatically
 }

@@ -12,22 +12,22 @@ A certified convergence criterion was defined to evaluate training: achieving a 
     \label{tab:sensitivity_summary}
     \begin{tabular}{llrrrrrr}
         \toprule
-        \textbf{Hyperparameter} & \textbf{Value} & \textbf{Converged} & \textbf{Steps to Conv.} & \textbf{Episodes} & \textbf{Final Return} & \textbf{Success} & \textbf{Fuel Rem.} \\
+        \textbf{Hyperparameter} & \textbf{Value}       & \textbf{Converged} & \textbf{Steps to Conv.} & \textbf{Episodes} & \textbf{Final Return} & \textbf{Success} & \textbf{Fuel Rem.} \\
         \midrule
-        \multirow{3}{*}{\textbf{Learning Rate} ($\alpha$)} 
-        & $1.0 \times 10^{-4}$ & \textbf{True}  & 190,000 & 771 & $210.61 \pm 31.4$ & $100.0\%$ & $42.7\%$ \\
-        & $3.0 \times 10^{-4}$ & \textbf{True}  & 90,000  & 507 & $196.89 \pm 38.2$ & $93.3\%$  & $49.1\%$ \\
-        & $1.0 \times 10^{-3}$ & \textbf{True}  & \textbf{70,000} & \textbf{383} & $194.87 \pm 42.1$ & $100.0\%$ & $40.8\%$ \\
+        \multirow{3}{*}{\textbf{Learning Rate} ($\alpha$)}
+                                & $1.0 \times 10^{-4}$ & \textbf{Yes}       & 190,000                 & 771               & $210.61 \pm 31.4$     & $100.0\%$        & $42.7\%$           \\
+                                & $3.0 \times 10^{-4}$ & \textbf{Yes}       & 90,000                  & 507               & $196.89 \pm 38.2$     & $93.3\%$         & $49.1\%$           \\
+                                & $1.0 \times 10^{-3}$ & \textbf{Yes}       & \textbf{70,000}         & \textbf{383}      & $194.87 \pm 42.1$     & $100.0\%$        & $40.8\%$           \\
         \midrule
-        \multirow{3}{*}{\textbf{Discount Factor} ($\gamma$)} 
-        & $0.95$ & \textbf{False} & $>200,000$ & 658 & $-115.76 \pm 88.4$ & $0.0\%$ & $0.0\%$ \\
-        & $0.99$ & \textbf{True}  & 130,000 & 565 & $194.82 \pm 44.6$ & $93.3\%$  & $39.8\%$ \\
-        & $0.999$& \textbf{True}  & 150,000 & 767 & $198.94 \pm 36.5$ & $93.3\%$  & \textbf{64.9\%} \\
+        \multirow{3}{*}{\textbf{Discount Factor} ($\gamma$)}
+                                & $0.95$               & \textbf{No}        & $>200,000$              & 658               & $-115.76 \pm 88.4$    & $0.0\%$          & $0.0\%$            \\
+                                & $0.99$               & \textbf{Yes}       & 130,000                 & 565               & $194.82 \pm 44.6$     & $93.3\%$         & $39.8\%$           \\
+                                & $0.999$              & \textbf{Yes}       & 150,000                 & 767               & $198.94 \pm 36.5$     & $93.3\%$         & \textbf{64.9\%}    \\
         \midrule
-        \multirow{3}{*}{\textbf{Entropy Coeff.} ($c_{\text{ent}}$)} 
-        & $0.00$ & \textbf{True}  & 120,000 & 564 & $190.36 \pm 40.8$ & $100.0\%$ & $31.3\%$ \\
-        & $0.01$ & \textbf{True}  & 100,000 & 523 & $190.04 \pm 45.1$ & $93.3\%$  & $41.1\%$ \\
-        & $0.05$ & \textbf{True}  & \textbf{90,000} & \textbf{482} & $196.65 \pm 34.7$ & $100.0\%$ & $42.8\%$ \\
+        \multirow{3}{*}{\textbf{Entropy Coeff.} ($c_{\text{ent}}$)}
+                                & $0.00$               & \textbf{Yes}       & 120,000                 & 564               & $190.36 \pm 40.8$     & $100.0\%$        & $31.3\%$           \\
+                                & $0.01$               & \textbf{Yes}       & 100,000                 & 523               & $190.04 \pm 45.1$     & $93.3\%$         & $41.1\%$           \\
+                                & $0.05$               & \textbf{Yes}       & \textbf{90,000}         & \textbf{482}      & $196.65 \pm 34.7$     & $100.0\%$        & $42.8\%$           \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -38,7 +38,7 @@ The learning rate $\alpha$ controls the step size taken by the Adam optimizer wh
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.82\linewidth]{figures/sensitivity_learning_rate.pdf}
-    \caption{Evaluation reward progression for different learning rates $\alpha$.}
+    \caption{Evaluation reward progression for different learning rates $\alpha$, with their respective $\pm 1\sigma$ confidence bands.}
     \label{fig:sensitivity_lr}
 \end{figure}
 
@@ -85,7 +85,7 @@ A comparison of the total environment steps and wall-clock execution time requir
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\linewidth]{figures/convergence_comparison_barplot.pdf}
+    \includegraphics[width=0.99\linewidth]{figures/convergence_comparison_barplot.pdf}
     \caption{Comparison of training steps and execution time to achieve certified convergence across hyperparameter configurations.}
     \label{fig:convergence_barplot}
 \end{figure}

@@ -4,19 +4,22 @@
 \counterwithout{section}{chapter}
 
 %% Set up the bibliography
-\usepackage{biblatex}
+\usepackage[style=numeric, sorting=none, giveninits=true, maxbibnames=5]{biblatex}
 \addbibresource{report.bib}
 
 %% Additional packages and commands
 \usepackage{parskip}
 \setlist{itemsep=-2pt} % Reducing white space in lists slightly
 \renewcommand{\deg}{\si{\degree}\xspace} % Use \deg easily, everywhere
+\hypersetup{plainpages=false}
 
 %% ----------------------------------------------------------------------
 %%    Begin of document
 %% ----------------------------------------------------------------------
 
 \begin{document}
+
+\pagenumbering{Alph}
 
 %% Define main cover parameters
 \title{Reinforcement Learning for Lander Control}
@@ -29,10 +32,10 @@
 \definecolor{title}{HTML}{4884d6} % Color for cover title
 
 \makecover
-\pagenumbering{arabic}
 
 \input{frontmatter/title-report.tex}
 
+\pagenumbering{roman}
 \tableofcontents
 
 \input{frontmatter/nomenclature}
@@ -41,6 +44,8 @@
 %%    Main Report Sections (AE4350 Grading Rubric)
 %% ----------------------------------------------------------------------
 
+\clearpage
+\pagenumbering{arabic}
 \input{mainmatter/introduction}
 \input{mainmatter/system-description}
 \input{mainmatter/rl-controller-design}

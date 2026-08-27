@@ -1,67 +1,74 @@
 \begin{titlepage}
 
-\begin{center}
+    \begin{center}
 
-%% Print the title
-{\makeatletter
-\largetitlestyle\fontsize{40}{40}\selectfont\@title
-\makeatother}
+        %% Print the title
+        {\makeatletter
+            \largetitlestyle\fontsize{40}{40}\selectfont\@title
+            \makeatother}
 
-%% Print the subtitle
-{\makeatletter
-\ifdefvoid{\@subtitle}{}{\bigskip\titlestyle\fontsize{18}{18}\selectfont\@subtitle}
-\makeatother}
+        %% Print the subtitle
+        {\makeatletter
+            \ifdefvoid{\@subtitle}{}{\bigskip\titlestyle\fontsize{18}{18}\selectfont\@subtitle}
+            \makeatother}
 
-\bigskip
-\bigskip
+        \bigskip
+        \bigskip
 
-by
+        by
 
-\bigskip
-\bigskip
+        \bigskip
+        \bigskip
 
-%% Print the name of the author
-{\makeatletter
-\largetitlestyle\fontsize{22}{22}\selectfont\@author
-\makeatother}
+        %% Print the name of the author
+        {\makeatletter
+            \largetitlestyle\fontsize{22}{22}\selectfont\@author
+            \makeatother}
 
-\bigskip
-\bigskip
+        \bigskip
+        \bigskip
 
-%% Print table with student details and repository
-\setlength\extrarowheight{3pt}
-\begin{tabular}{ll}
-    \textbf{Student Name:} & Andreu Craus Vidal \\
-    \textbf{Student Number:} & 6552501 \\
-    \textbf{GitHub Repository:} & \url{https://github.com/acrausvidal/BioInspired_2026_lander_project} \\
-\end{tabular}
+        %% Print table with student details and repository
+        \setlength\extrarowheight{3pt}
+        \begin{tabular}{ll}
+            \textbf{Student Name:}      & Andreu Craus Vidal                                                   \\
+            \textbf{Student Number:}    & 6552501                                                              \\
+            \textbf{GitHub Repository:} & \url{https://github.com/acrausvidal/BioInspired_2026_lander_project} \\
+        \end{tabular}
 
-\vfill
+        \bigskip
+        \bigskip
 
-%% Print course and faculty information
-\begin{tabular}{ll}
-    \textbf{Course:} & AE4350 Bio-inspired Intelligence and Learning for Aerospace Applications \\
-    \textbf{Instructors:} & Guido de Croon, Erik-Jan van Kampen \\
-    \textbf{Project Duration:} & 2025-2026 Q4 \\
-    \textbf{Faculty:} & Faculty of Aerospace Engineering, Delft University of Technology \\
-\end{tabular}
+        \newdateformat{reportdate}{\ordinal{DAY}~\monthname[\THEMONTH]~\THEYEAR}
+        \reportdate\today
 
-\bigskip
-\bigskip
+        \vfill
 
-%% Add a source and description for the cover and optional attribution for the template
-\begin{tabular}{p{15mm}p{10cm}}
-    Cover: & Artwork by Nanobanana \\
-    Style: & TU Delft Report Style, with modifications by Daan Zwaneveld
-\end{tabular}
 
-\end{center}
+        %% Print course and faculty information
+        \begin{tabular}{ll}
+            \textbf{Course:}           & AE4350 Bio-inspired Intelligence and Learning for Aerospace Applications \\
+            \textbf{Instructors:}      & Guido de Croon, Erik-Jan van Kampen                                      \\
+            \textbf{Project Duration:} & 2025-2026 Q4                                                             \\
+            \textbf{Faculty:}          & Faculty of Aerospace Engineering, Delft University of Technology         \\
+        \end{tabular}
 
-%% Insert the TU Delft logo at the bottom of the page
-\begin{tikzpicture}[remember picture, overlay]
-    \node[above=10mm] at (current page.south) {%
-        \includegraphics{figures/logo-black}
-    };
-\end{tikzpicture}
+        \bigskip
+        \bigskip
+
+        %% Add a source and description for the cover and optional attribution for the template
+        \begin{tabular}{p{15mm}p{10cm}}
+            Cover: & Artwork by Nanobanana                                       \\
+            Style: & TU Delft Report Style, with modifications by Daan Zwaneveld
+        \end{tabular}
+
+    \end{center}
+
+    %% Insert the TU Delft logo at the bottom of the page
+    \begin{tikzpicture}[remember picture, overlay]
+        \node[above=10mm] at (current page.south) {%
+            \includegraphics{figures/logo-black}
+        };
+    \end{tikzpicture}
 
 \end{titlepage}

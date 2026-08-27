@@ -1,60 +1,62 @@
+\vfill
 \section*{Abbreviations}
 
 \begin{longtable}{p{2.5cm}p{10cm}}
     \toprule
-    Abbreviation & Definition \\
+    Abbreviation & Definition                       \\
     \midrule\endhead
-    AC           & Actor-Critic \\
-    ACD          & Adaptive Critic Design \\
-    ANN          & Artificial Neural Network \\
+    AC           & Actor-Critic                     \\
+    ACD          & Adaptive Critic Design           \\
+    ANN          & Artificial Neural Network        \\
     GAE          & Generalized Advantage Estimation \\
-    MLP          & Multi-Layer Perceptron \\
-    MSE          & Mean Squared Error \\
-    PPO          & Proximal Policy Optimization \\
-    RCS          & Reaction Control System \\
-    RL           & Reinforcement Learning \\
-    TD           & Temporal Difference \\
+    MLP          & Multi-Layer Perceptron           \\
+    MSE          & Mean Squared Error               \\
+    PPO          & Proximal Policy Optimization     \\
+    RCS          & Reaction Control System          \\
+    RL           & Reinforcement Learning           \\
+    TD           & Temporal Difference              \\
     \bottomrule
 \end{longtable}
 
+\newpage
 \section*{Symbols}
 
 \begin{longtable}{p{2.5cm}p{9.5cm}p{2.0cm}}
     \toprule
-    Symbol & Definition & Unit \\
+    Symbol                   & Definition                                         & Unit                         \\
     \midrule\endhead
-    $\hat{A}_t$         & Advantage function estimate & [-] \\
-    $c_{\text{ent}}$    & Policy entropy bonus coefficient & [-] \\
-    $c_v$               & Value loss weighting coefficient & [-] \\
-    $F(t)$              & Instantaneous fuel capacity / remaining fuel & [units] \\
-    $F_0$               & Initial total fuel capacity ($100.0$) & [units] \\
-    $g$                 & Lunar gravitational acceleration ($10.0$) & [$\text{m/s}^2$] \\
-    $I_{zz}(t)$         & Mass moment of inertia about pitch axis & [$\text{kg}\cdot\text{m}^2$] \\
-    $m(t)$              & Total lander mass & [kg] \\
-    $r_t$               & Scalar reward at time step $t$ & [-] \\
-    $R_t$               & Discounted cumulative return & [-] \\
-    $s_t$               & Environment state observation vector & [-] \\
-    $t$                 & Discrete simulation time step & [s] \\
-    $u_t$               & Continuous action vector $[u_1, u_2]$ & [-] \\
-    $u_{\text{main}}$   & Main engine throttle ($[0.5, 1.0]$) & [-] \\
-    $u_{\text{side}}$   & Lateral thruster throttle ($[-1.0, 1.0]$) & [-] \\
-    $v_x, v_y$          & Horizontal and vertical linear velocities & [m/s] \\
-    $V(s)$              & State-value function & [-] \\
-    $x, y$              & Planar coordinates relative to landing pad & [m] \\
+    $\hat{A}_t$              & Advantage function estimate                        & [-]                          \\
+    $c_{\text{ent}}$         & Policy entropy bonus coefficient                   & [-]                          \\
+    $c_v$                    & Value loss weighting coefficient                   & [-]                          \\
+    $F(t)$                   & Instantaneous fuel capacity / remaining fuel       & [units]                      \\
+    $F_0$                    & Initial total fuel capacity ($100.0$)              & [units]                      \\
+    $g$                      & Gravitational acceleration ($10.0$)                & [$\text{m/s}^2$]             \\
+    $I_{zz}(t)$              & Mass moment of inertia about pitch axis            & [$\text{kg}\cdot\text{m}^2$] \\
+    $m(t)$                   & Total lander mass                                  & [kg]                         \\
+    $r_t$                    & Scalar reward at time step $t$                     & [-]                          \\
+    $R_t$                    & Discounted cumulative return                       & [-]                          \\
+    $s_t$                    & Environment state observation vector               & [-]                          \\
+    $t$                      & Discrete simulation time step                      & [s]                          \\
+    $u_t$                    & Continuous action vector $[u_1, u_2]$              & [-]                          \\
+    $u_{\text{main}}$        & Main engine throttle ($[0.5, 1.0]$)                & [-]                          \\
+    $u_{\text{side}}$        & Lateral thruster throttle ($[-1.0, 1.0]$)          & [-]                          \\
+    $v_x, v_y$               & Horizontal and vertical linear velocities          & [m/s]                        \\
+    $V(s)$                   & State-value function                               & [-]                          \\
+    $x, y$                   & Planar coordinates relative to landing pad         & [m]                          \\
     \midrule
-    $\alpha$            & Neural network learning rate & [-] \\
-    $\gamma$            & Future reward discount factor & [-] \\
-    $\delta_t$          & Temporal Difference (TD) residual & [-] \\
-    $\epsilon_{\text{clip}}$ & PPO clipping threshold ($0.20$) & [-] \\
-    $\theta$            & Pitch orientation angle & [rad] \\
-    $\lambda$           & GAE exponential weighting factor ($0.95$) & [-] \\
-    $\mu(s)$            & Mean of Gaussian policy action distribution & [-] \\
-    $\pi(u \mid s)$     & Control policy & [-] \\
-    $\rho(t)$           & Lander body density & [$\text{kg/m}^2$] \\
-    $\rho_0$            & Initial wet body density ($5.0$) & [$\text{kg/m}^2$] \\
-    $\rho_{\text{dry}}$ & Dry body density ($2.5$) & [$\text{kg/m}^2$] \\
-    $\sigma$            & Standard deviation of Gaussian policy distribution & [-] \\
-    $\phi$              & Critic neural network weights & [-] \\
-    $\omega$            & Pitch angular velocity & [rad/s] \\
+    $\alpha$                 & Neural network learning rate                       & [-]                          \\
+    $\gamma$                 & Future reward discount factor                      & [-]                          \\
+    $\delta_t$               & Temporal Difference (TD) residual                  & [-]                          \\
+    $\epsilon_{\text{clip}}$ & PPO clipping threshold ($0.20$)                    & [-]                          \\
+    $\theta$                 & Pitch orientation angle                            & [rad]                        \\
+    $\lambda$                & GAE exponential weighting factor ($0.95$)          & [-]                          \\
+    $\mu(s)$                 & Mean of Gaussian policy action distribution        & [-]                          \\
+    $\pi(u \mid s)$          & Control policy                                     & [-]                          \\
+    $\rho(t)$                & Lander body density                                & [$\text{kg/m}^2$]            \\
+    $\rho_0$                 & Initial wet body density ($5.0$)                   & [$\text{kg/m}^2$]            \\
+    $\rho_{\text{dry}}$      & Dry body density ($2.5$)                           & [$\text{kg/m}^2$]            \\
+    $\sigma$                 & Standard deviation of Gaussian policy distribution & [-]                          \\
+    $\phi$                   & Critic neural network weights                      & [-]                          \\
+    $\omega$                 & Pitch angular velocity                             & [rad/s]                      \\
     \bottomrule
 \end{longtable}

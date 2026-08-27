@@ -5,46 +5,46 @@ The complete training and simulation loop combining the continuous PPO controlle
 
 \vspace{0.5em}
 \noindent\fbox{%
-\parbox{\textwidth}{%
-\textbf{Algorithm A.1: Continuous PPO on Mass-Varying Lunar Lander}
-\vspace{0.3em}\hrule\vspace{0.5em}
-\begin{enumerate}[leftmargin=1.8em,itemsep=2pt]
-    \item \textbf{Initialization:}
-    \begin{itemize}[leftmargin=1.2em,itemsep=1pt]
-        \item Initialize Actor network $\pi_\theta(u \mid s)$ with weights $\theta$ and exploration standard deviation $\sigma$.
-        \item Initialize Critic network $V_\phi(s)$ with weights $\phi$.
-        \item Set environment parameters: initial fuel capacity $F_0 = 100.0$, initial density $\rho_0 = 5.0$, dry density $\rho_{\text{dry}} = 2.5$.
-    \end{itemize}
-    \item \textbf{Training Loop (for each rollout iteration):}
-    \begin{enumerate}[label=\textbf{\arabic{enumi}.\arabic*.},leftmargin=1.5em,itemsep=2pt]
-        \item \textbf{Rollout Data Collection (over 4 parallel environments):}
-        \begin{itemize}[leftmargin=1.2em,itemsep=1pt]
-            \item For each time step $t = 1, \dots, n_{\text{steps}}$:
-            \item Sample continuous action $u_t \sim \mathcal{N}(\mu(s_t), \sigma^2)$ from the Actor network.
-            \item Map action $u_t$ to main engine throttle $u_{\text{main}}$ and side thrusters $u_{\text{side}}$.
-            \item Subtract fuel burned $\Delta F_t$ from remaining propellant $F(t)$.
-            \item Update body density $\rho(t)$ using \Cref{eq:density_scaling} and refresh vehicle mass and inertia with \texttt{ResetMassData()}.
-            \item Step the Box2D physics simulator forward by $\Delta t = 0.02\,\si{s}$ ($50\,\si{Hz}$).
-            \item Record transition tuple $(s_t, u_t, r_t, s_{t+1}, V_\phi(s_t))$.
-        \end{itemize}
-        \item \textbf{Advantage and Target Calculation:}
-        \begin{itemize}[leftmargin=1.2em,itemsep=1pt]
-            \item Compute Temporal Difference errors: $\delta_t = r_t + \gamma V_\phi(s_{t+1}) - V_\phi(s_t)$.
-            \item Compute Generalized Advantage Estimates (GAE): $\hat{A}_t = \sum_{l=0}^\infty (\gamma \lambda)^l \delta_{t+l}$.
-            \item Compute target returns: $R_t = \hat{A}_t + V_\phi(s_t)$.
-        \end{itemize}
-        \item \textbf{Network Optimization (for 10 epochs over mini-batches of size 64):}
-        \begin{itemize}[leftmargin=1.2em,itemsep=1pt]
-            \item Compute policy probability ratio $r_t(\theta) = \frac{\pi_\theta(u_t \mid s_t)}{\pi_{\theta_{\text{old}}}(u_t \mid s_t)}$.
-            \item Compute clipped surrogate loss $L^{\text{CLIP}}(\theta)$ using \Cref{eq:ppo_clip}.
-            \item Compute Critic squared error loss $L^{\text{VF}}(\phi) = (V_\phi(s_t) - R_t)^2$.
-            \item Compute Gaussian entropy bonus $\mathcal{H}(\pi)$ using \Cref{eq:entropy_formula}.
-            \item Update Actor ($\theta$) and Critic ($\phi$) network weights using the Adam optimizer with learning rate $\alpha$.
-        \end{itemize}
-    \end{enumerate}
-    \item \textbf{Output:} Trained closed-loop landing policy $\pi_\theta(u \mid s)$.
-\end{enumerate}
-}%
+    \parbox{\textwidth}{%
+        \textbf{Algorithm A.1: Continuous PPO on Mass-Varying Lunar Lander}
+        \vspace{0.3em}\hrule\vspace{0.5em}
+        \begin{enumerate}[leftmargin=1.8em,itemsep=2pt]
+            \item \textbf{Initialization:}
+                  \begin{itemize}[leftmargin=1.2em,itemsep=1pt]
+                      \item Initialize Actor network $\pi_\theta(u \mid s)$ with weights $\theta$ and exploration standard deviation $\sigma$.
+                      \item Initialize Critic network $V_\phi(s)$ with weights $\phi$.
+                      \item Set environment parameters: initial fuel capacity $F_0 = 100.0$, initial density $\rho_0 = 5.0$, dry density $\rho_{\text{dry}} = 2.5$.
+                  \end{itemize}
+            \item \textbf{Training Loop (for each rollout iteration):}
+                  \begin{enumerate}[label=\textbf{\arabic{enumi}.\arabic*.},leftmargin=1.5em,itemsep=2pt]
+                      \item \textbf{Rollout Data Collection (over 4 parallel environments):}
+                            \begin{itemize}[leftmargin=1.2em,itemsep=1pt]
+                                \item For each time step $t = 1, \dots, n_{\text{steps}}$:
+                                \item Sample continuous action $u_t \sim \mathcal{N}(\mu(s_t), \sigma^2)$ from the Actor network.
+                                \item Map action $u_t$ to main engine throttle $u_{\text{main}}$ and side thrusters $u_{\text{side}}$.
+                                \item Subtract fuel burned $\Delta F_t$ from remaining propellant $F(t)$.
+                                \item Update body density $\rho(t)$ using \Cref{eq:density_scaling} and refresh vehicle mass and inertia with \texttt{ResetMassData()}.
+                                \item Step the Box2D physics simulator forward by $\Delta t = 0.02\,\si{s}$ ($50\,\si{Hz}$).
+                                \item Record transition tuple $(s_t, u_t, r_t, s_{t+1}, V_\phi(s_t))$.
+                            \end{itemize}
+                      \item \textbf{Advantage and Target Calculation:}
+                            \begin{itemize}[leftmargin=1.2em,itemsep=1pt]
+                                \item Compute Temporal Difference errors: $\delta_t = r_t + \gamma V_\phi(s_{t+1}) - V_\phi(s_t)$.
+                                \item Compute Generalized Advantage Estimates (GAE): $\hat{A}_t = \sum_{l=0}^\infty (\gamma \lambda)^l \delta_{t+l}$.
+                                \item Compute target returns: $R_t = \hat{A}_t + V_\phi(s_t)$.
+                            \end{itemize}
+                      \item \textbf{Network Optimization (for 10 epochs over mini-batches of size 64):}
+                            \begin{itemize}[leftmargin=1.2em,itemsep=1pt]
+                                \item Compute policy probability ratio $r_t(\theta) = \frac{\pi_\theta(u_t \mid s_t)}{\pi_{\theta_{\text{old}}}(u_t \mid s_t)}$.
+                                \item Compute clipped surrogate loss $L^{\text{CLIP}}(\theta)$ using \Cref{eq:ppo_clip}.
+                                \item Compute Critic squared error loss $L^{\text{VF}}(\phi) = (V_\phi(s_t) - R_t)^2$.
+                                \item Compute Gaussian entropy bonus $\mathcal{H}(\pi)$.
+                                \item Update Actor ($\theta$) and Critic ($\phi$) network weights using the Adam optimizer with learning rate $\alpha$.
+                            \end{itemize}
+                  \end{enumerate}
+            \item \textbf{Output:} Trained closed-loop landing policy $\pi_\theta(u \mid s)$.
+        \end{enumerate}
+    }%
 }
 \vspace{0.5em}
 \vspace{0.5em}

@@ -4,35 +4,42 @@
 \subsection{Environment and Coordinate Frames}
 The simulation is built on the 2D continuous Lunar Lander environment in Gymnasium \cite{towers2023gymnasium}, powered by the Box2D multi-body physics engine operating at $50\,\si{Hz}$. To describe the vehicle motion, two reference frames are defined:
 \begin{itemize}[leftmargin=*,label=$\bullet$]
-    \item \textbf{Inertial Frame} $\mathcal{F}_I$: Fixed to the lunar surface with its origin $(x=0, y=0)$ located at the center of the landing pad. The $x$-axis points horizontally to the right, and the $y$-axis points vertically upward opposite to gravity ($g = 10.0\,\si{m/s^2}$).
+    \item \textbf{Inertial Frame} $\mathcal{F}_I$: Fixed to the lunar surface with its origin $(x=0, y=0)$ located at the center of the landing pad. The $x$-axis points horizontally to the right, and the $y$-axis points vertically upward opposite to gravity (default is $g = -10.0\,\si{m/s^2}$ \cite{gymnasium_lunar_lander}).
     \item \textbf{Body Frame} $\mathcal{F}_B$: Fixed to the lander's center of mass, with its longitudinal axis aligned with the main engine thrust line. The attitude of the lander is defined by the pitch angle $\theta \in [-\pi, \pi]$, where $\theta = 0$ corresponds to an upright vehicle.
 \end{itemize}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\linewidth]{figures/episode_screenshot.png}
+    \caption{Lunar Lander environment.}
+    \label{fig:environment_screenshot}
+\end{figure}
+
 \subsection{Dynamic Mass and Propellant Depletion Model}
-In standard benchmark environments, the lander's mass is kept constant throughout the episode. However, real rocket descent stages experience substantial mass loss due to propellant consumption. To incorporate this physical effect, a dynamic mass model was implemented:
+In the standard benchmark environment, the lander's mass is kept constant throughout the episode. However, real rocket descent stages experience substantial mass loss due to propellant consumption. To incorporate this physical effect, a dynamic mass model was implemented:
 \begin{itemize}[leftmargin=*,label=$\bullet$]
     \item The lander starts each episode with a maximum fuel capacity of $F_0 = 100.0\,\text{units}$.
     \item Operating the main engine consumes up to $0.40\,\text{units}$ of fuel per frame, while the side thrusters consume up to $0.05\,\text{units}$ per frame.
-    \item As fuel is burned, the body density $\rho(t)$ decreases linearly from its initial wet density $\rho_0 = 5.0\,\si{kg/m^2}$ (total mass $\approx 4.82\,\si{kg}$) to its dry density $\rho_{\text{dry}} = 2.5\,\si{kg/m^2}$ (dry mass $\approx 2.41\,\si{kg}$):
-    \begin{equation}
-        \rho(t) = \rho_{\text{dry}} + (\rho_0 - \rho_{\text{dry}}) \cdot \frac{F(t)}{F_0}.
-        \label{eq:density_scaling}
-    \end{equation}
+    \item As fuel is burned, the body density\footnote{ Box2D does not allow direct mass reassignment on a fixture; it calculates mass and the rotational moment of inertia from fixture density \cite{box2d_manual}.} $\rho(t)$ decreases linearly from its initial wet density $\rho_0 = 5.0\,\si{kg/m^2}$ (total mass\footnote{In Box2D, rigid bodies are 2D geometric shapes defined in meters \cite{box2d_manual}. The polygonal hull of the lander has a geometric cross-sectional area $A \approx 0.9633 \si{m^2}$. Consequently, Box2D computes rigid body mass as: $m = \text{density}\ (\rho) \times \text{Area}\ (A)$, which taking the default density $\rho_0 = 5.0\, \si{kg/m^2}$ yields $ m_{wet} = 5.0 \times 0.9633 \approx 4.82\, \si{kg}$.} $\approx 4.82\,\si{kg}$) to its dry density $\rho_{\text{dry}} = 2.5\,\si{kg/m^2}$ (dry mass $\approx 2.41\,\si{kg}$):
+          \begin{equation}
+              \rho(t) = \rho_{\text{dry}} + (\rho_0 - \rho_{\text{dry}}) \cdot \frac{F(t)}{F_0}.
+              \label{eq:density_scaling}
+          \end{equation}
 \end{itemize}
 At every simulation step, the physics engine updates the vehicle mass and moment of inertia. As a consequence, the lander becomes $50\%$ lighter when empty, meaning that the same engine thrust produces twice the acceleration near the end of the descent.
 
 \subsection{State Space, Action Space, and Reward Structure}
-\textbf{State Space:} The state observation is a 9-dimensional vector containing the lander's kinematic states, landing leg ground contacts, and the remaining fuel fraction:
+\textbf{State Space:} The state observation is a 9-dimensional vector containing the lander's kinematic states, landing leg ground contacts and, as a new addition, the remaining fuel fraction:
 \begin{equation}
     s = \left[ x,\, y,\, v_x,\, v_y,\, \theta,\, \omega,\, \text{left leg contact},\, \text{right leg contact},\, \frac{F(t)}{F_0} \right].
     \label{eq:state_vector}
 \end{equation}
 All continuous quantities are normalized to roughly $[-1, 1]$ to facilitate neural network training.
 
-\textbf{Action Space:} The action space is continuous and consists of two control inputs $u = [u_1, u_2] \in [-1, 1]^2$:
+\textbf{Action Space:} The action space is continuous and consists of two control inputs $u = [u_1, u_2] \in [-1, 1]$:
 \begin{itemize}[leftmargin=*,label=$\bullet$]
-    \item \textbf{Main Engine ($u_1$):} If $u_1 \le 0$, the main engine is off. If $u_1 > 0$, the engine fires with a continuous throttle between $50\%$ and $100\%$ ($u_{\text{main}} = 0.5 + 0.5 u_1$), producing up to $13.0\,\si{N}$ of upward thrust.
-    \item \textbf{Side Thrusters ($u_2$):} If $|u_2| \le 0.5$, the side thrusters are off. If $|u_2| > 0.5$, the corresponding thruster fires with a directional throttle between $50\%$ and $100\%$ ($u_{\text{side}} = \text{sign}(u_2)|u_2|$), producing up to $0.6\,\si{N}$ to control attitude and horizontal translation.
+    \item \textbf{Main Engine ($u_1$):} If $u_1 \le 0$, the main engine is off. If $u_1 > 0$, the engine fires with a continuous throttle between $50\%$ and $100\%$ ($u_{\text{main}} = 0.5 + 0.5 u_1$).
+    \item \textbf{Side Thrusters ($u_2$):} If $|u_2| \le 0.5$, the side thrusters are off. If $|u_2| > 0.5$, the corresponding thruster fires with a directional throttle between $50\%$ and $100\%$ ($u_{\text{side}} = \text{sign}(u_2)|u_2|$), which controls attitude and horizontal translation \cite{gymnasium_lunar_lander}.
 \end{itemize}
 
 \textbf{Reward Function:} The reward function is formulated to guide the lander smoothly to the pad:
