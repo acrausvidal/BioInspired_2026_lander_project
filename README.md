@@ -1,8 +1,8 @@
 # Continuous PPO Controller for Mass-Varying Lunar Lander
 
 **TU Delft | Faculty of Aerospace Engineering**  
-**Course:** AE4350 Bio-inspired Intelligence  
-**Author:** Alvaro Craus Vidal  
+**Course:** AE4350 Bio-inspired Intelligence and Learning for Aerospace Applications
+**Author:** Andreu Craus Vidal  
 
 ---
 
