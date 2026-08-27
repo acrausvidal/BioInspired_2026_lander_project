@@ -83,7 +83,6 @@ As shown in \Cref{fig:sensitivity_entropy}, the entropy regularization coefficie
 \end{itemize}
 
 \subsection{Overall Convergence Comparison}
-A comparison of the total environment steps required to reach certified convergence and the corresponding final mean reward is shown in \Cref{fig:convergence_barplot}. The results demonstrate that an adequate planning horizon ($\gamma \ge 0.99$) combined with active continuous exploration ($c_{\text{ent}} > 0$) is essential for reliable convergence. Lastly, a learning rate of $\alpha = 3\times 10^{-4}$ proves to be the best compromise between control performance and convergence steps.
 
 \begin{figure}[htb]
     \centering
@@ -91,3 +90,5 @@ A comparison of the total environment steps required to reach certified converge
     \caption{Comparison of training steps and mean return to achieve certified convergence across hyperparameter configurations.}
     \label{fig:convergence_barplot}
 \end{figure}
+A comparison of the total environment steps required to reach certified convergence and the corresponding final mean reward is shown in \Cref{fig:convergence_barplot}. The results demonstrate that an adequate planning horizon ($\gamma \ge 0.99$) combined with active continuous exploration ($c_{\text{ent}} > 0$) is essential for reliable convergence. Lastly, a learning rate of $\alpha = 3\times 10^{-4}$ proves to be the best compromise between control performance and convergence steps.
+
