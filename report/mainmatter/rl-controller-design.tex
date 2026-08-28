@@ -19,7 +19,7 @@ where $\gamma \in [0, 1)$ is the discount factor specifying how much future rewa
 \subsection{Actor-Critic Architecture and Function Approximation}
 For simple discrete tasks, value functions can be stored in lookup tables (e.g., standard Q-tables). However, discretizing a continuous 9-dimensional state space and a 2-dimensional continuous action space creates an intractable curse of dimensionality. For continuous flight control, function approximators such as Artificial Neural Networks (ANNs) are necessary \cite{vankampen2025lecture}.
 
-In this context, an \textbf{Actor-Critic} (or Adaptive Critic Design) architecture with to distinct ANNs is utilized:
+In this context, an \textbf{Actor-Critic} (or Adaptive Critic Design) architecture with two distinct ANNs is utilized:
 \begin{itemize}[leftmargin=*,label=$\bullet$]
     \item \textbf{Critic Network ($V_\phi$):} Approximates the value function $V(s)$. The network takes the 9-dimensional state vector as input and outputs a single scalar estimating the expected future return of that state.
     \item \textbf{Actor Network ($\pi_\theta$):} Represents the control policy mapping states directly to continuous actions. The network takes the 9-dimensional state vector and parameterizes a Gaussian distribution $\mathcal{N}(\mu(s), \sigma^2)$, outputting the mean action $\mu(s)$ and a trainable standard deviation $\sigma$ for each control channel.
